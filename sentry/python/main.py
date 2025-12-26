@@ -3,6 +3,7 @@ import sys
 
 import custom_exc
 import sentry_sdk
+import sentry_sdk.tracing_utils
 
 
 def main():
@@ -10,6 +11,10 @@ def main():
     if len(sys.argv) < 2:
         print("missing mandatory argument")
         sys.exit(1)
+    sentry_sdk.get_current_scope()._propagation_context = sentry_sdk.tracing_utils.PropagationContext(
+        trace_id="noop_trace_id",
+        span_id="noop_span_id"
+    )
     globals()[sys.argv[1]]()
 
 

@@ -29,6 +29,15 @@ func run() error {
 	if len(os.Args) < 2 {
 		return fmt.Errorf("missing command argument")
 	}
+
+	// Set TraceID & SpanID for consistent JSON output across test calls.
+	sentry.CurrentHub().Scope().SetPropagationContext(sentry.PropagationContext{
+		TraceID:                sentry.TraceID{},
+		SpanID:                 sentry.SpanID{},
+		ParentSpanID:           sentry.SpanID{},
+		DynamicSamplingContext: sentry.DynamicSamplingContext{},
+	})
+
 	switch os.Args[1] {
 	case "panic":
 		raisePanic()
@@ -104,7 +113,7 @@ func captureExceptionScoped() {
 }
 
 func captureExceptionWrapped() {
-	origin := &ManualError{Prop: 42}
+	origin := fmt.Errorf("origin exception")
 	middle := fmt.Errorf("middle exception: %w", origin)
 	sentry.CaptureException(fmt.Errorf("inner exception: %w", middle))
 }
