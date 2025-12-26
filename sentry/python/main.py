@@ -7,7 +7,7 @@ import sentry_sdk.tracing_utils
 
 
 def main():
-    sentry_sdk.init(dsn=os.environ["DSN"], send_default_pii=True)
+    sentry_sdk.init(dsn=os.environ["DSN"], send_default_pii=True, release="test")
     if len(sys.argv) < 2:
         print("missing mandatory argument")
         sys.exit(1)
