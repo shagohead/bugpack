@@ -1,0 +1,13 @@
+FROM golang:1.24-alpine AS builder
+WORKDIR /go/src/app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY bugpack bugpack/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/bugpack bugpack/*.go
+
+FROM alpine
+COPY --from=builder /go/bin/bugpack /usr/local/bin/bugpack
+ENTRYPOINT ["bugpack"]
+LABEL org.opencontainers.image.authors="Vakhmin Anton <html.ru@gmail.com>"
