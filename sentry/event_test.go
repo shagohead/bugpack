@@ -27,13 +27,54 @@ func TestMain(t *testing.M) {
 
 func saveGoldenFile(t *testing.T, name string, b []byte) {
 	t.Helper()
-	f, err := os.OpenFile(path.Join("testdata", name), os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(path.Join("testdata", name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = f.Write(b); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// Get quoted value start and length.
+func valueDimensions(b []byte, key string) (int, int) {
+	start := bytes.Index(b, []byte(`"`+key+`":`))
+	if start < 1 {
+		return -1, -1
+	}
+	start += bytes.IndexRune(b[start:], ':') + 2 // Move to quoted value.
+	return start, bytes.IndexRune(b[start:], '"')
+}
+
+var (
+	placeholdEventID   = []byte(`e51b3c5ce3b34c7b898e4e830ef62432`)
+	placeholdDSN       = []byte(`http://username@127.0.0.1:12345/1`)
+	placeholdTimestamp = []byte(`2025-12-27T14:53:00Z`)
+)
+
+// Replace quoted value with placeholder.
+func replaceValue(b []byte, key string, placeholder []byte) []byte {
+	start, end := valueDimensions(b, key)
+	if start < 1 {
+		return b
+	}
+	return bytes.ReplaceAll(b, b[start:start+end], placeholder)
+}
+
+// Replace all values which changes every time.
+func replaceAll(b []byte) []byte {
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			fmt.Printf("input bytes: %s", b)
+			panic(rec)
+		}
+	}()
+	b = replaceValue(b, "event_id", placeholdEventID)
+	b = replaceValue(b, "sent_at", placeholdTimestamp)
+	b = replaceValue(b, "timestamp", placeholdTimestamp)
+	b = replaceValue(b, "dsn", placeholdDSN)
+	return b
 }
 
 // Test received data from instrumented command calls.
@@ -61,7 +102,7 @@ func TestCommands(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			*received = append(*received, body.Bytes())
+			*received = append(*received, replaceAll(body.Bytes()))
 		}))
 		t.Cleanup(func() {
 			server.Close()

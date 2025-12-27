@@ -15,11 +15,18 @@ func main() {
 	}
 }
 
+var timestamp = time.Date(2025, time.December, 27, 14, 53, 0, 0, time.UTC)
+
 func run() error {
 	if err := sentry.Init(sentry.ClientOptions{
 		Dsn:         os.Getenv("DSN"),
 		Debug:       true,
 		Environment: "local",
+		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			hint.EventID = "00000000000000000000000000000000"
+			event.Timestamp = timestamp
+			return event
+		},
 	}); err != nil {
 		return err
 	}
