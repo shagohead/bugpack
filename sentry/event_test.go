@@ -149,6 +149,7 @@ func TestCommands(t *testing.T) {
 				{args: []string{"capture_message"}},
 				{args: []string{"division_by_zero"}},
 				{args: []string{"custom_exception"}},
+				{args: []string{"with_breadcrumbs"}},
 			},
 		},
 	} {

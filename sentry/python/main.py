@@ -1,13 +1,24 @@
+import logging
 import os
 import sys
 
 import custom_exc
 import sentry_sdk
 import sentry_sdk.tracing_utils
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+
+logger = logging.getLogger(__name__)
 
 
 def main():
-    sentry_sdk.init(dsn=os.environ["DSN"], send_default_pii=True, release="test")
+    logging.basicConfig(level=logging.INFO)
+    sentry_sdk.init(
+        dsn=os.environ["DSN"],
+        send_default_pii=True,
+        release="test",
+        integrations=[LoggingIntegration(level=logging.INFO)],
+    )
     if len(sys.argv) < 2:
         print("missing mandatory argument")
         sys.exit(1)
@@ -34,6 +45,12 @@ def custom_exception():
         custom_exc.raise_exc()
     except Exception as err:
         sentry_sdk.capture_exception(err)
+
+
+def with_breadcrumbs():
+    logger.info("info message with arg: %s", (42, "string argument"))
+    logger.warning("warning message with extra", extra={"extra_key": 42})
+    sentry_sdk.capture_message("test message", level="fatal")
 
 
 if __name__ == "__main__":
