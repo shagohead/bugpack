@@ -19,7 +19,7 @@ var saveGoldenFiles bool
 var captureOutput bool
 
 func TestMain(t *testing.M) {
-	flag.BoolVar(&saveGoldenFiles, "save-golden", false, "Save golden files named received_event.json")
+	flag.BoolVar(&saveGoldenFiles, "save-golden", false, "Save golden files in testdata dir")
 	flag.BoolVar(&captureOutput, "capture-output", false, "Capture subprocess STDOUT & STDERR")
 	flag.Parse()
 	os.Exit(t.Run())
@@ -60,6 +60,9 @@ func replaceValue(b []byte, key string, placeholder []byte) []byte {
 	}
 	return bytes.ReplaceAll(b, b[start:start+end], placeholder)
 }
+
+// TODO: Make sentry output agnostic to dev machine
+// (replace sys.argv and other machine-local values) in case anyone else would contribute.
 
 // Replace all values which changes every time.
 func replaceAll(b []byte) []byte {
