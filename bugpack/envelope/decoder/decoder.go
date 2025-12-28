@@ -10,33 +10,73 @@ import (
 
 type Envelope struct {
 	Meta
+	Header
 	Event
 }
 
-func (e *Envelope) Decode(d *jx.Decoder) error {
-	// decode meta
-	if err := d.ObjBytes(); err != nil {
-		return errors.Wrap(err, "meta")
+func (e *Envelope) Decode(d *jx.Decoder) (err error) {
+	if err = e.Meta.Decode(d); err != nil {
+		return errors.Wrap(err, "meta object")
 	}
-	if err := d.ObjBytes(); err != nil {
-		return errors.Wrap(err, "event header")
+	if err = e.Header.Decode(d); err != nil {
+		return errors.Wrap(err, "header object")
 	}
-	if err := d.ObjBytes(); err != nil {
-		return errors.Wrap(err, "event")
+	if err = e.Event.Decode(d); err != nil {
+		return errors.Wrap(err, "event object")
 	}
+	return nil
 }
 
 type Meta struct {
 	EventID string
 	SentAt  time.Time
-	SDK     struct {
-		Name    string
-		Version string
-		Trace   struct {
-			Environment string
-			TraceID     string
+}
+
+func (m *Meta) Decode(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		switch string(key) {
+		case "event_id":
+			m.EventID, err = d.Str()
+		case "sent_at":
+			var s string
+			s, err = d.Str()
+			if err != nil {
+				break
+			}
+			m.SentAt, err = time.Parse(time.RFC3339Nano, s)
+		default:
+			err = d.Skip()
 		}
-	}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
+}
+
+type Header struct {
+	Type        string
+	ContentType string
+	Length      int
+}
+
+func (h *Header) Decode(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		switch string(key) {
+		case "type":
+			h.Type, err = d.Str()
+		case "content_type":
+			h.ContentType, err = d.Str()
+		case "length":
+			h.Length, err = d.Int()
+		default:
+			err = d.Skip()
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
 }
 
 // TODO: использовать unique для SDK, Platform, и прочих низко-кардинальных значений.
@@ -56,31 +96,6 @@ type Event struct {
 	Message     string
 	Exception   Array[Exception, *Exception]
 	Timestamp   time.Time
-}
-
-type SDK struct {
-	Name    string
-	Version string
-}
-
-type Exception struct {
-	Module string
-	Type   string
-	Value  string
-	Frames Array[Frame, *Frame]
-}
-
-type Frame struct {
-	Filename string
-	AbsPath  string
-	Module   string
-	Function string
-	LineNum  int
-	CtxLine  string
-	PreCtx   []string
-	PostCtx  []string
-	Vars     map[string]any
-	InApp    bool
 }
 
 func (e *Event) Decode(d *jx.Decoder) error {
@@ -105,13 +120,13 @@ func (e *Event) Decode(d *jx.Decoder) error {
 		case "contexts":
 			err = decodeMap(d, &e.Contexts, "")
 		case "extra":
-			err = decodeMap(d, &e.Extra, "")
+			err = e.decodeExtra(d)
 		case "user":
 			err = decodeMap(d, &e.User, "")
 		case "tags":
 			err = decodeStrMap(d, &e.Tags)
 		case "exception":
-			err = e.Exception.Decode(d)
+			err = e.decodeException(d)
 		case "timestamp":
 			var s string
 			s, err = d.Str()
@@ -127,6 +142,49 @@ func (e *Event) Decode(d *jx.Decoder) error {
 		}
 		return err
 	})
+}
+
+func (e *Event) decodeExtra(d *jx.Decoder) error {
+	e.Extra = make(map[string]any)
+	return d.Obj(func(d *jx.Decoder, key string) error {
+		r, err := d.Raw()
+		if err != nil {
+			return errors.Wrap(err, key)
+		}
+		// NOTE: Возможно надо скалярные типы приводить к соответствующим в Go.
+		// А возможно надо приводить значение к строке.
+		// Решение нужно будет принять во время реализации хранения этих данных в СУБД.
+		// e.Extra[key] = r.String()
+		e.Extra[key] = []byte(r)
+		return nil
+	})
+}
+
+func (e *Event) decodeException(d *jx.Decoder) error {
+	switch d.Next() {
+	case jx.Array:
+		return e.Exception.Decode(d)
+	case jx.Object:
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+			switch string(key) {
+			case "values":
+				err = e.Exception.Decode(d)
+			default:
+				err = d.Skip()
+			}
+			if err != nil {
+				err = errors.Wrap(err, string(key))
+			}
+			return err
+		})
+	default:
+		return fmt.Errorf("unexpected `exception` type: %s", d.Next().String())
+	}
+}
+
+type SDK struct {
+	Name    string
+	Version string
 }
 
 func (s *SDK) Decode(d *jx.Decoder) error {
@@ -167,15 +225,41 @@ func (a *Array[T, PT]) Decode(d *jx.Decoder) error {
 	})
 }
 
+type Exception struct {
+	Module string
+	Type   string
+	Value  string
+	Frames Array[Frame, *Frame]
+}
+
 func (e *Exception) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
 		case "module":
+			if d.Next() == jx.Null {
+				err = d.Skip()
+				break
+			}
 			e.Module, err = d.Str()
 		case "type":
 			e.Type, err = d.Str()
 		case "value":
 			e.Value, err = d.Str()
+		case "stacktrace":
+			err = e.decodeStacktrace(d)
+		default:
+			err = d.Skip()
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
+}
+
+func (e *Exception) decodeStacktrace(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		switch string(key) {
 		case "frames":
 			err = e.Frames.Decode(d)
 		default:
@@ -186,6 +270,19 @@ func (e *Exception) Decode(d *jx.Decoder) error {
 		}
 		return err
 	})
+}
+
+type Frame struct {
+	Filename string
+	AbsPath  string
+	Module   string
+	Function string
+	LineNum  int
+	CtxLine  string
+	PreCtx   []string
+	PostCtx  []string
+	Vars     map[string]any
+	InApp    bool
 }
 
 func (f *Frame) Decode(d *jx.Decoder) error {
@@ -204,9 +301,9 @@ func (f *Frame) Decode(d *jx.Decoder) error {
 		case "context_line":
 			f.CtxLine, err = d.Str()
 		case "pre_context":
-			err = decodeContextLines(d, &f.PreCtx)
+			err = f.decodeContextLines(d, &f.PreCtx)
 		case "post_context":
-			err = decodeContextLines(d, &f.PostCtx)
+			err = f.decodeContextLines(d, &f.PostCtx)
 		case "in_app":
 			f.InApp, err = d.Bool()
 		case "vars":
@@ -221,6 +318,17 @@ func (f *Frame) Decode(d *jx.Decoder) error {
 	})
 }
 
+func (*Frame) decodeContextLines(d *jx.Decoder, dst *[]string) error {
+	return d.Arr(func(d *jx.Decoder) error {
+		s, err := d.Str()
+		if err != nil {
+			return err
+		}
+		*dst = append(*dst, s)
+		return nil
+	})
+}
+
 func decodeMap(d *jx.Decoder, dst *map[string]any, prefix string) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		if *dst == nil {
@@ -228,10 +336,12 @@ func decodeMap(d *jx.Decoder, dst *map[string]any, prefix string) error {
 		}
 		var v any
 		switch d.Next() {
-		// case jx.Array:
-		// case jx.Bool:
-		// case jx.Invalid:
-		// case jx.Null:
+		case jx.Null:
+			err = d.Skip()
+		case jx.Bool:
+			v, err = d.Bool()
+		case jx.Array:
+			v, err = d.Raw()
 		case jx.Number:
 			var f float64
 			f, err = d.Float64()
@@ -271,16 +381,5 @@ func decodeStrMap(d *jx.Decoder, dst *map[string]string) error {
 		}
 		(*dst)[string(key)] = s
 		return err
-	})
-}
-
-func decodeContextLines(d *jx.Decoder, dst *[]string) error {
-	return d.Arr(func(d *jx.Decoder) error {
-		s, err := d.Str()
-		if err != nil {
-			return err
-		}
-		*dst = append(*dst, s)
-		return nil
 	})
 }

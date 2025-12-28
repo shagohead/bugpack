@@ -1,0 +1,176 @@
+{
+  "event_id": "e51b3c5ce3b34c7b898e4e830ef62432",
+  "sent_at": "2025-12-27T14:53:00Z",
+  "dsn": "http://username@127.0.0.1:12345/1",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1"
+  },
+  "trace": {
+    "environment": "local",
+    "public_key": "username",
+    "trace_id": "00000000000000000000000000000000"
+  }
+}
+{
+  "type": "event",
+  "length": 2684
+}
+{
+  "contexts": {
+    "device": {
+      "arch": "arm64",
+      "num_cpu": 14
+    },
+    "os": {
+      "name": "darwin"
+    },
+    "runtime": {
+      "go_maxprocs": 14,
+      "go_numcgocalls": 0,
+      "go_numroutines": 2,
+      "name": "go",
+      "version": "go1.25.5"
+    },
+    "trace": {
+      "span_id": "0000000000000000",
+      "trace_id": "00000000000000000000000000000000"
+    }
+  },
+	"extra": {
+    "scope_extra_int": 42,
+    "scope_extra_string": "extra string"
+  },
+	"environment": "local",
+  "event_id": "e51b3c5ce3b34c7b898e4e830ef62432",
+  "level": "error",
+  "platform": "go",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1",
+    "integrations": [
+      "ContextifyFrames",
+      "Environment",
+      "GlobalTags",
+      "IgnoreErrors",
+      "IgnoreTransactions",
+      "Modules"
+    ],
+    "packages": [
+      {
+        "name": "sentry-go",
+        "version": "0.35.1"
+      }
+    ]
+  },
+  "server_name": "MacBook-Pro-A.local",
+  "user": {},
+  "modules": {
+    "github.com/getsentry/sentry-go": "v0.35.1",
+    "golang.org/x/sys": "v0.18.0",
+    "golang.org/x/text": "v0.14.0",
+    "sentry_integration": "(devel)"
+  },
+  "exception": [
+    {
+      "type": "*errors.errorString",
+      "value": "origin exception",
+      "mechanism": {
+        "type": "generic",
+        "exception_id": 0,
+        "is_exception_group": true
+      }
+    },
+    {
+      "type": "*fmt.wrapError",
+      "value": "middle exception: origin exception",
+      "mechanism": {
+        "type": "generic",
+        "parent_id": 0,
+        "exception_id": 1,
+        "is_exception_group": true
+      }
+    },
+    {
+      "type": "*fmt.wrapError",
+      "value": "inner exception: middle exception: origin exception",
+      "stacktrace": {
+        "frames": [
+          {
+            "function": "main",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 12,
+            "pre_context": [
+              "",
+              "\t\"github.com/getsentry/sentry-go\"",
+              ")",
+              "",
+              "func main() {"
+            ],
+            "context_line": "\tif err := run(); err != nil {",
+            "post_context": [
+              "\t\tos.Stderr.WriteString(err.Error() + \"\\n\")",
+              "\t\tos.Exit(1)",
+              "\t}",
+              "}",
+              ""
+            ],
+            "in_app": true
+          },
+          {
+            "function": "run",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 62,
+            "pre_context": [
+              "\tcase \"captureExceptionNested\":",
+              "\t\tcaptureExceptionNested()",
+              "\tcase \"captureExceptionScoped\":",
+              "\t\tcaptureExceptionScoped()",
+              "\tcase \"captureExceptionWrapped\":"
+            ],
+            "context_line": "\t\tcaptureExceptionWrapped()",
+            "post_context": [
+              "\tdefault:",
+              "\t\treturn fmt.Errorf(\"unknown command argument %q\", os.Args[1])",
+              "\t}",
+              "\treturn nil",
+              "}"
+            ],
+            "in_app": true
+          },
+          {
+            "function": "captureExceptionWrapped",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 125,
+            "pre_context": [
+              "}",
+              "",
+              "func captureExceptionWrapped() {",
+              "\torigin := fmt.Errorf(\"origin exception\")",
+              "\tmiddle := fmt.Errorf(\"middle exception: %w\", origin)"
+            ],
+            "context_line": "\tsentry.CaptureException(fmt.Errorf(\"inner exception: %w\", middle))",
+            "post_context": [
+              "}",
+              "",
+              "type ManualError struct {",
+              "\tProp int",
+              "}"
+            ],
+            "in_app": true
+          }
+        ]
+      },
+      "mechanism": {
+        "type": "generic",
+        "parent_id": 1,
+        "exception_id": 2,
+        "is_exception_group": true
+      }
+    }
+  ],
+  "timestamp": "2025-12-27T14:53:00Z"
+}
