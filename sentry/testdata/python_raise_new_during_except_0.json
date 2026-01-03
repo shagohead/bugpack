@@ -1,6 +1,6 @@
 {
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "sent_at": "2026-01-03T12:17:33.202689Z",
+  "event_id": "da9e32ea1e9a4ea7a0b9eacf614226d4",
+  "sent_at": "2026-01-03T12:17:33.598117Z",
   "trace": {
     "trace_id": "noop_trace_id",
     "environment": "production",
@@ -11,7 +11,7 @@
 {
   "type": "event",
   "content_type": "application/json",
-  "length": 1656
+  "length": 2412
 }
 {
   "level": "error",
@@ -30,26 +30,65 @@
             {
               "filename": "main.py",
               "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-              "function": "division_by_zero",
+              "function": "raise_new_during_except",
               "module": "__main__",
-              "lineno": 38,
+              "lineno": 59,
               "pre_context": [
-                "    sentry_sdk.capture_message(\"test message\", level=\"warning\")",
                 "",
                 "",
-                "def division_by_zero():",
-                "    try:"
+                "def raise_new_during_except():",
+                "    try:",
+                "        try:"
               ],
-              "context_line": "        print(1 / 0)",
+              "context_line": "            print(1 / 0)",
+              "post_context": [
+                "        except Exception as err:",
+                "            raise RuntimeError(\"other exception\") from err",
+                "    except Exception as err:",
+                "        sentry_sdk.capture_exception(err)",
+                ""
+              ],
+              "vars": {
+                "err": "RuntimeError('other exception')"
+              },
+              "in_app": true
+            }
+          ]
+        }
+      },
+      {
+        "mechanism": {
+          "type": "generic",
+          "handled": true
+        },
+        "module": null,
+        "type": "RuntimeError",
+        "value": "other exception",
+        "stacktrace": {
+          "frames": [
+            {
+              "filename": "main.py",
+              "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
+              "function": "raise_new_during_except",
+              "module": "__main__",
+              "lineno": 61,
+              "pre_context": [
+                "def raise_new_during_except():",
+                "    try:",
+                "        try:",
+                "            print(1 / 0)",
+                "        except Exception as err:"
+              ],
+              "context_line": "            raise RuntimeError(\"other exception\") from err",
               "post_context": [
                 "    except Exception as err:",
                 "        sentry_sdk.capture_exception(err)",
                 "",
                 "",
-                "def custom_exception():"
+                "def raise_same_during_except():"
               ],
               "vars": {
-                "err": "ZeroDivisionError('division by zero')"
+                "err": "RuntimeError('other exception')"
               },
               "in_app": true
             }
@@ -58,8 +97,8 @@
       }
     ]
   },
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "timestamp": "2026-01-03T12:17:33.199529Z",
+  "event_id": "da9e32ea1e9a4ea7a0b9eacf614226d4",
+  "timestamp": "2026-01-03T12:17:33.594865Z",
   "contexts": {
     "trace": {
       "trace_id": "noop_trace_id",
@@ -79,7 +118,7 @@
   "extra": {
     "sys.argv": [
       "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-      "division_by_zero"
+      "raise_new_during_except"
     ]
   },
   "modules": {

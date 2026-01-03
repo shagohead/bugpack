@@ -1,6 +1,6 @@
 {
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "sent_at": "2026-01-03T12:17:33.202689Z",
+  "event_id": "65581bc814404e35a4db0b021cba21db",
+  "sent_at": "2026-01-03T12:17:33.728108Z",
   "trace": {
     "trace_id": "noop_trace_id",
     "environment": "production",
@@ -11,7 +11,7 @@
 {
   "type": "event",
   "content_type": "application/json",
-  "length": 1656
+  "length": 2216
 }
 {
   "level": "error",
@@ -30,23 +30,49 @@
             {
               "filename": "main.py",
               "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-              "function": "division_by_zero",
+              "function": "raise_same_during_except",
               "module": "__main__",
-              "lineno": 38,
+              "lineno": 71,
               "pre_context": [
-                "    sentry_sdk.capture_message(\"test message\", level=\"warning\")",
-                "",
-                "",
-                "def division_by_zero():",
-                "    try:"
+                "def raise_same_during_except():",
+                "    try:",
+                "        try:",
+                "            print(1 / 0)",
+                "        except Exception as err:"
               ],
-              "context_line": "        print(1 / 0)",
+              "context_line": "            raise err",
               "post_context": [
                 "    except Exception as err:",
                 "        sentry_sdk.capture_exception(err)",
                 "",
                 "",
-                "def custom_exception():"
+                "def raise_same_during_capture():"
+              ],
+              "vars": {
+                "err": "ZeroDivisionError('division by zero')"
+              },
+              "in_app": true
+            },
+            {
+              "filename": "main.py",
+              "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
+              "function": "raise_same_during_except",
+              "module": "__main__",
+              "lineno": 69,
+              "pre_context": [
+                "",
+                "",
+                "def raise_same_during_except():",
+                "    try:",
+                "        try:"
+              ],
+              "context_line": "            print(1 / 0)",
+              "post_context": [
+                "        except Exception as err:",
+                "            raise err",
+                "    except Exception as err:",
+                "        sentry_sdk.capture_exception(err)",
+                ""
               ],
               "vars": {
                 "err": "ZeroDivisionError('division by zero')"
@@ -58,8 +84,8 @@
       }
     ]
   },
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "timestamp": "2026-01-03T12:17:33.199529Z",
+  "event_id": "65581bc814404e35a4db0b021cba21db",
+  "timestamp": "2026-01-03T12:17:33.724936Z",
   "contexts": {
     "trace": {
       "trace_id": "noop_trace_id",
@@ -79,7 +105,7 @@
   "extra": {
     "sys.argv": [
       "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-      "division_by_zero"
+      "raise_same_during_except"
     ]
   },
   "modules": {

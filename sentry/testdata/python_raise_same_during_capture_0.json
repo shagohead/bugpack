@@ -1,6 +1,6 @@
 {
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "sent_at": "2026-01-03T12:17:33.202689Z",
+  "event_id": "3bca57fc6add4f1db97bb3ac94d98f7d",
+  "sent_at": "2026-01-03T12:17:33.858089Z",
   "trace": {
     "trace_id": "noop_trace_id",
     "environment": "production",
@@ -11,7 +11,7 @@
 {
   "type": "event",
   "content_type": "application/json",
-  "length": 1656
+  "length": 1707
 }
 {
   "level": "error",
@@ -30,23 +30,23 @@
             {
               "filename": "main.py",
               "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-              "function": "division_by_zero",
+              "function": "raise_same_during_capture",
               "module": "__main__",
-              "lineno": 38,
+              "lineno": 79,
               "pre_context": [
-                "    sentry_sdk.capture_message(\"test message\", level=\"warning\")",
                 "",
                 "",
-                "def division_by_zero():",
-                "    try:"
+                "def raise_same_during_capture():",
+                "    try:",
+                "        try:"
               ],
-              "context_line": "        print(1 / 0)",
+              "context_line": "            print(1 / 0)",
               "post_context": [
+                "        except Exception as err:",
+                "            sentry_sdk.capture_exception(err)",
+                "            raise err",
                 "    except Exception as err:",
-                "        sentry_sdk.capture_exception(err)",
-                "",
-                "",
-                "def custom_exception():"
+                "        sentry_sdk.capture_exception(err)"
               ],
               "vars": {
                 "err": "ZeroDivisionError('division by zero')"
@@ -58,8 +58,8 @@
       }
     ]
   },
-  "event_id": "30823c52ef4349c99c007f29925322b7",
-  "timestamp": "2026-01-03T12:17:33.199529Z",
+  "event_id": "3bca57fc6add4f1db97bb3ac94d98f7d",
+  "timestamp": "2026-01-03T12:17:33.854939Z",
   "contexts": {
     "trace": {
       "trace_id": "noop_trace_id",
@@ -79,7 +79,7 @@
   "extra": {
     "sys.argv": [
       "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
-      "division_by_zero"
+      "raise_same_during_capture"
     ]
   },
   "modules": {

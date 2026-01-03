@@ -1,3 +1,147 @@
-{"event_id":"e51b3c5ce3b34c7b898e4e830ef62432","sent_at":"2025-12-27T14:53:00Z","dsn":"http://username@127.0.0.1:12345/1","sdk":{"name":"sentry.go","version":"0.35.1"},"trace":{"environment":"local","public_key":"username","trace_id":"00000000000000000000000000000000"}}
-{"type":"event","length":2348}
-{"contexts":{"device":{"arch":"arm64","num_cpu":14},"os":{"name":"darwin"},"runtime":{"go_maxprocs":14,"go_numcgocalls":0,"go_numroutines":2,"name":"go","version":"go1.25.5"},"trace":{"span_id":"0000000000000000","trace_id":"00000000000000000000000000000000"}},"environment":"local","event_id":"e51b3c5ce3b34c7b898e4e830ef62432","level":"error","platform":"go","sdk":{"name":"sentry.go","version":"0.35.1","integrations":["ContextifyFrames","Environment","GlobalTags","IgnoreErrors","IgnoreTransactions","Modules"],"packages":[{"name":"sentry-go","version":"0.35.1"}]},"server_name":"MacBook-Pro-A.local","user":{},"modules":{"github.com/getsentry/sentry-go":"v0.35.1","golang.org/x/sys":"v0.18.0","golang.org/x/text":"v0.14.0","sentry_integration":"(devel)"},"exception":[{"type":"*main.ManualError","value":"ManualError Property: 3","stacktrace":{"frames":[{"function":"main","module":"main","abs_path":"/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go","lineno":12,"pre_context":["","\t\"github.com/getsentry/sentry-go\"",")","","func main() {"],"context_line":"\tif err := run(); err != nil {","post_context":["\t\tos.Stderr.WriteString(err.Error() + \"\\n\")","\t\tos.Exit(1)","\t}","}",""],"in_app":true},{"function":"run","module":"main","abs_path":"/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go","lineno":56,"pre_context":["\tcase \"captureMessage\":","\t\tcaptureMessage()","\tcase \"captureException\":","\t\tcaptureException()","\tcase \"captureExceptionMany\":"],"context_line":"\t\tcaptureExceptionMany()","post_context":["\tcase \"captureExceptionNested\":","\t\tcaptureExceptionNested()","\tcase \"captureExceptionScoped\":","\t\tcaptureExceptionScoped()","\tcase \"captureExceptionWrapped\":"],"in_app":true},{"function":"captureExceptionMany","module":"main","abs_path":"/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go","lineno":82,"pre_context":["func captureException() {","\tsentry.CaptureException(\u0026ManualError{Prop: 42})","}","","func captureExceptionMany() {"],"context_line":"\tsentry.CaptureException(\u0026ManualError{Prop: 3})","post_context":["\tsentry.CaptureException(\u0026ManualError{Prop: 42})","}","","func captureExceptionNested() {","\tcaptureExceptionNestedChild()"],"in_app":true}]}}],"timestamp":"2025-12-27T14:53:00Z"}
+{
+  "event_id": "4bf00a4617224ace80bb2fa4e8b94102",
+  "sent_at": "2026-01-03T01:44:29.601401+03:00",
+  "dsn": "http://username@127.0.0.1:60181/1",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1"
+  },
+  "trace": {
+    "environment": "local",
+    "public_key": "username",
+    "trace_id": "00000000000000000000000000000000"
+  }
+}
+{
+  "type": "event",
+  "length": 2348
+}
+{
+  "contexts": {
+    "device": {
+      "arch": "arm64",
+      "num_cpu": 14
+    },
+    "os": {
+      "name": "darwin"
+    },
+    "runtime": {
+      "go_maxprocs": 14,
+      "go_numcgocalls": 0,
+      "go_numroutines": 2,
+      "name": "go",
+      "version": "go1.25.5"
+    },
+    "trace": {
+      "span_id": "0000000000000000",
+      "trace_id": "00000000000000000000000000000000"
+    }
+  },
+  "environment": "local",
+  "event_id": "4bf00a4617224ace80bb2fa4e8b94102",
+  "level": "error",
+  "platform": "go",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1",
+    "integrations": [
+      "ContextifyFrames",
+      "Environment",
+      "GlobalTags",
+      "IgnoreErrors",
+      "IgnoreTransactions",
+      "Modules"
+    ],
+    "packages": [
+      {
+        "name": "sentry-go",
+        "version": "0.35.1"
+      }
+    ]
+  },
+  "server_name": "MacBook-Pro-A.local",
+  "user": {},
+  "modules": {
+    "github.com/getsentry/sentry-go": "v0.35.1",
+    "golang.org/x/sys": "v0.18.0",
+    "golang.org/x/text": "v0.14.0",
+    "sentry_integration": "(devel)"
+  },
+  "exception": [
+    {
+      "type": "*main.ManualError",
+      "value": "ManualError Property: 3",
+      "stacktrace": {
+        "frames": [
+          {
+            "function": "main",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 12,
+            "pre_context": [
+              "",
+              "\t\"github.com/getsentry/sentry-go\"",
+              ")",
+              "",
+              "func main() {"
+            ],
+            "context_line": "\tif err := run(); err != nil {",
+            "post_context": [
+              "\t\tos.Stderr.WriteString(err.Error() + \"\\n\")",
+              "\t\tos.Exit(1)",
+              "\t}",
+              "}",
+              ""
+            ],
+            "in_app": true
+          },
+          {
+            "function": "run",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 56,
+            "pre_context": [
+              "\tcase \"captureMessage\":",
+              "\t\tcaptureMessage()",
+              "\tcase \"captureException\":",
+              "\t\tcaptureException()",
+              "\tcase \"captureExceptionMany\":"
+            ],
+            "context_line": "\t\tcaptureExceptionMany()",
+            "post_context": [
+              "\tcase \"captureExceptionNested\":",
+              "\t\tcaptureExceptionNested()",
+              "\tcase \"captureExceptionScoped\":",
+              "\t\tcaptureExceptionScoped()",
+              "\tcase \"captureExceptionWrapped\":"
+            ],
+            "in_app": true
+          },
+          {
+            "function": "captureExceptionMany",
+            "module": "main",
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
+            "lineno": 82,
+            "pre_context": [
+              "func captureException() {",
+              "\tsentry.CaptureException(\u0026ManualError{Prop: 42})",
+              "}",
+              "",
+              "func captureExceptionMany() {"
+            ],
+            "context_line": "\tsentry.CaptureException(\u0026ManualError{Prop: 3})",
+            "post_context": [
+              "\tsentry.CaptureException(\u0026ManualError{Prop: 42})",
+              "}",
+              "",
+              "func captureExceptionNested() {",
+              "\tcaptureExceptionNestedChild()"
+            ],
+            "in_app": true
+          }
+        ]
+      }
+    }
+  ],
+  "timestamp": "2025-12-27T14:53:00Z"
+}

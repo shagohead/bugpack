@@ -1,0 +1,16 @@
+{}
+{
+  "type": "client_report",
+  "content_type": "application/json",
+  "length": 113
+}
+{
+  "timestamp": 1767442653.859667,
+  "discarded_events": [
+    {
+      "reason": "event_processor",
+      "category": "error",
+      "quantity": 1
+    }
+  ]
+}

@@ -1,3 +1,72 @@
-{"event_id":"e51b3c5ce3b34c7b898e4e830ef62432","sent_at":"2025-12-27T14:53:00Z","dsn":"http://username@127.0.0.1:12345/1","sdk":{"name":"sentry.go","version":"0.35.1"},"trace":{"environment":"local","public_key":"username","trace_id":"00000000000000000000000000000000"}}
-{"type":"event","length":826}
-{"contexts":{"device":{"arch":"arm64","num_cpu":14},"os":{"name":"darwin"},"runtime":{"go_maxprocs":14,"go_numcgocalls":0,"go_numroutines":2,"name":"go","version":"go1.25.5"},"trace":{"span_id":"0000000000000000","trace_id":"00000000000000000000000000000000"}},"environment":"local","event_id":"e51b3c5ce3b34c7b898e4e830ef62432","level":"info","message":"manual text message","platform":"go","sdk":{"name":"sentry.go","version":"0.35.1","integrations":["ContextifyFrames","Environment","GlobalTags","IgnoreErrors","IgnoreTransactions","Modules"],"packages":[{"name":"sentry-go","version":"0.35.1"}]},"server_name":"MacBook-Pro-A.local","user":{},"modules":{"github.com/getsentry/sentry-go":"v0.35.1","golang.org/x/sys":"v0.18.0","golang.org/x/text":"v0.14.0","sentry_integration":"(devel)"},"timestamp":"2025-12-27T14:53:00Z"}
+{
+  "event_id": "444f7c0f69f545a4b6dc4965780c03fe",
+  "sent_at": "2026-01-03T01:44:29.493671+03:00",
+  "dsn": "http://username@127.0.0.1:60179/1",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1"
+  },
+  "trace": {
+    "environment": "local",
+    "public_key": "username",
+    "trace_id": "00000000000000000000000000000000"
+  }
+}
+{
+  "type": "event",
+  "length": 826
+}
+{
+  "contexts": {
+    "device": {
+      "arch": "arm64",
+      "num_cpu": 14
+    },
+    "os": {
+      "name": "darwin"
+    },
+    "runtime": {
+      "go_maxprocs": 14,
+      "go_numcgocalls": 0,
+      "go_numroutines": 2,
+      "name": "go",
+      "version": "go1.25.5"
+    },
+    "trace": {
+      "span_id": "0000000000000000",
+      "trace_id": "00000000000000000000000000000000"
+    }
+  },
+  "environment": "local",
+  "event_id": "444f7c0f69f545a4b6dc4965780c03fe",
+  "level": "info",
+  "message": "manual text message",
+  "platform": "go",
+  "sdk": {
+    "name": "sentry.go",
+    "version": "0.35.1",
+    "integrations": [
+      "ContextifyFrames",
+      "Environment",
+      "GlobalTags",
+      "IgnoreErrors",
+      "IgnoreTransactions",
+      "Modules"
+    ],
+    "packages": [
+      {
+        "name": "sentry-go",
+        "version": "0.35.1"
+      }
+    ]
+  },
+  "server_name": "MacBook-Pro-A.local",
+  "user": {},
+  "modules": {
+    "github.com/getsentry/sentry-go": "v0.35.1",
+    "golang.org/x/sys": "v0.18.0",
+    "golang.org/x/text": "v0.14.0",
+    "sentry_integration": "(devel)"
+  },
+  "timestamp": "2025-12-27T14:53:00Z"
+}

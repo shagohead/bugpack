@@ -1,7 +1,7 @@
 {
-  "event_id": "3143f733f3d04b1aab12f46974a3c77a",
-  "sent_at": "2026-01-03T01:44:29.811106+03:00",
-  "dsn": "http://username@127.0.0.1:60185/1",
+  "event_id": "9977f71fac7440689948de578f6ef7b3",
+  "sent_at": "2026-01-03T02:28:04.725533+03:00",
+  "dsn": "http://username@127.0.0.1:50601/1",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
@@ -14,7 +14,7 @@
 }
 {
   "type": "event",
-  "length": 3345
+  "length": 3164
 }
 {
   "contexts": {
@@ -32,23 +32,14 @@
       "name": "go",
       "version": "go1.25.5"
     },
-    "scope_ctx_key": {
-      "ctx_key_float": 3.14,
-      "ctx_key_int": 1,
-      "ctx_key_string": "string value"
-    },
     "trace": {
       "span_id": "0000000000000000",
       "trace_id": "00000000000000000000000000000000"
     }
   },
   "environment": "local",
-  "event_id": "3143f733f3d04b1aab12f46974a3c77a",
-  "extra": {
-    "scope_extra_int": 42,
-    "scope_extra_string": "extra string"
-  },
-  "level": "warning",
+  "event_id": "9977f71fac7440689948de578f6ef7b3",
+  "level": "error",
   "platform": "go",
   "sdk": {
     "name": "sentry.go",
@@ -69,36 +60,41 @@
     ]
   },
   "server_name": "MacBook-Pro-A.local",
-  "tags": {
-    "tag_key": "tag_value"
-  },
-  "user": {
-    "id": "125844",
-    "email": "mail@domain.com",
-    "ip_address": "127.0.0.1",
-    "username": "example",
-    "name": "Some User",
-    "data": {
-      "origin": "source code"
-    }
-  },
+  "user": {},
   "modules": {
     "github.com/getsentry/sentry-go": "v0.35.1",
     "golang.org/x/sys": "v0.18.0",
     "golang.org/x/text": "v0.14.0",
     "sentry_integration": "(devel)"
   },
+  "request": {
+    "url": "http://example.com/homepath",
+    "method": "GET",
+    "data": "Hello World!",
+    "query_string": "search=xyz",
+    "cookies": "taste=ginger",
+    "headers": {
+      "Cookie": "taste=ginger",
+      "Host": "example.com",
+      "Origin": "test code",
+      "X-Key": "x-value"
+    },
+    "env": {
+      "REMOTE_ADDR": "192.0.2.1",
+      "REMOTE_PORT": "1234"
+    }
+  },
   "exception": [
     {
       "type": "*errors.errorString",
-      "value": "scoped error",
+      "value": "request attached error",
       "stacktrace": {
         "frames": [
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -119,66 +115,64 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 60,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 67,
             "pre_context": [
-              "\tcase \"captureExceptionMany\":",
-              "\t\tcaptureExceptionMany()",
-              "\tcase \"captureExceptionNested\":",
-              "\t\tcaptureExceptionNested()",
-              "\tcase \"captureExceptionScoped\":"
-            ],
-            "context_line": "\t\tcaptureExceptionScoped()",
-            "post_context": [
+              "\tcase \"captureExceptionScoped\":",
+              "\t\tcaptureExceptionScoped()",
               "\tcase \"captureExceptionWrapped\":",
               "\t\tcaptureExceptionWrapped()",
+              "\tcase \"withRequest\":"
+            ],
+            "context_line": "\t\twithRequest()",
+            "post_context": [
               "\tdefault:",
               "\t\treturn fmt.Errorf(\"unknown command argument %q\", os.Args[1])",
-              "\t}"
+              "\t}",
+              "\treturn nil",
+              "}"
             ],
             "in_app": true
           },
           {
-            "function": "captureExceptionScoped",
+            "function": "withRequest",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 100,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 144,
             "pre_context": [
+              "\treturn fmt.Sprintf(\"ManualError Property: %d\", m.Prop)",
+              "}",
               "",
-              "// TODO: Научиться аттачить скоуп/ивент к трейсу open-telemetry.",
-              "",
-              "func captureExceptionScoped() {",
+              "func withRequest() {",
               "\thub := sentry.CurrentHub().Clone()"
             ],
             "context_line": "\thub.WithScope(func(scope *sentry.Scope) {",
             "post_context": [
-              "\t\tscope.SetTag(\"tag_key\", \"tag_value\")",
-              "\t\tscope.SetContext(\"scope_ctx_key\", map[string]any{",
-              "\t\t\t\"ctx_key_int\":    1,",
-              "\t\t\t\"ctx_key_string\": \"string value\",",
-              "\t\t\t\"ctx_key_float\":  3.14,"
+              "\t\treq := httptest.NewRequest(http.MethodGet, \"/homepath?search=xyz\", nil)",
+              "\t\treq.Header.Set(\"X-Key\", \"x-value\")",
+              "\t\treq.Header.Set(\"Origin\", \"test code\")",
+              "\t\treq.Header.Set(\"Cookie\", \"taste=ginger\")",
+              "\t\tscope.SetRequest(req)"
             ],
             "in_app": true
           },
           {
             "function": "func1",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 118,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 151,
             "pre_context": [
-              "\t\t\tUsername:  \"example\",",
-              "\t\t\tName:      \"Some User\",",
-              "\t\t\tData:      map[string]string{\"origin\": \"source code\"},",
-              "\t\t})",
-              "\t\tscope.SetLevel(sentry.LevelWarning)"
+              "\t\treq.Header.Set(\"X-Key\", \"x-value\")",
+              "\t\treq.Header.Set(\"Origin\", \"test code\")",
+              "\t\treq.Header.Set(\"Cookie\", \"taste=ginger\")",
+              "\t\tscope.SetRequest(req)",
+              "\t\tscope.SetRequestBody([]byte(`Hello World!`))"
             ],
-            "context_line": "\t\thub.CaptureException(fmt.Errorf(\"scoped error\"))",
+            "context_line": "\t\thub.CaptureException(fmt.Errorf(\"request attached error\"))",
             "post_context": [
               "\t})",
               "}",
-              "",
-              "func captureExceptionWrapped() {",
-              "\torigin := fmt.Errorf(\"origin exception\")"
+              ""
             ],
             "in_app": true
           }

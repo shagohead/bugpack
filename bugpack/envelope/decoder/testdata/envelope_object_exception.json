@@ -58,6 +58,23 @@
       }
     ]
   },
+  "request": {
+    "url": "http://example.com/homepath",
+    "method": "GET",
+    "data": "Hello World!",
+    "query_string": "search=xyz",
+    "cookies": "taste=ginger",
+    "headers": {
+      "Cookie": "taste=ginger",
+      "Host": "example.com",
+      "Origin": "test code",
+      "X-Key": "x-value"
+    },
+    "env": {
+      "REMOTE_ADDR": "192.0.2.1",
+      "REMOTE_PORT": "1234"
+    }
+  },
   "event_id": "e51b3c5ce3b34c7b898e4e830ef62432",
   "timestamp": "2025-12-27T14:53:00Z",
   "contexts": {

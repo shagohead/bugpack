@@ -3,6 +3,7 @@ package sentry_test
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -13,75 +14,26 @@ import (
 	"os/exec"
 	"path"
 	"testing"
+
+	"github.com/go-faster/jx"
+
+	"github.com/shagohead/bugpack/bugpack/envelope/decoder"
 )
 
-var saveGoldenFiles bool
-var captureOutput bool
+var (
+	saveJSON      bool
+	captureOutput bool
+)
 
 func TestMain(t *testing.M) {
-	flag.BoolVar(&saveGoldenFiles, "save-golden", false, "Save golden files in testdata dir")
+	flag.BoolVar(&saveJSON, "save-json", false, "Save events JSON data in testdata dir")
 	flag.BoolVar(&captureOutput, "capture-output", false, "Capture subprocess STDOUT & STDERR")
 	flag.Parse()
 	os.Exit(t.Run())
 }
 
-func saveGoldenFile(t *testing.T, name string, b []byte) {
-	t.Helper()
-	f, err := os.OpenFile(path.Join("testdata", name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = f.Write(b); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// Get quoted value start and length.
-func valueDimensions(b []byte, key string) (int, int) {
-	start := bytes.Index(b, []byte(`"`+key+`":`))
-	if start < 1 {
-		return -1, -1
-	}
-	start += bytes.IndexRune(b[start:], ':') + 2 // Move to quoted value.
-	return start, bytes.IndexRune(b[start:], '"')
-}
-
-var (
-	placeholdEventID   = []byte(`e51b3c5ce3b34c7b898e4e830ef62432`)
-	placeholdDSN       = []byte(`http://username@127.0.0.1:12345/1`)
-	placeholdTimestamp = []byte(`2025-12-27T14:53:00Z`)
-)
-
-// Replace quoted value with placeholder.
-func replaceValue(b []byte, key string, placeholder []byte) []byte {
-	start, end := valueDimensions(b, key)
-	if start < 1 {
-		return b
-	}
-	return bytes.ReplaceAll(b, b[start:start+end], placeholder)
-}
-
-// TODO: Make sentry output agnostic to dev machine
-// (replace sys.argv and other machine-local values) in case anyone else would contribute.
-
-// Replace all values which changes every time.
-func replaceAll(b []byte) []byte {
-	defer func() {
-		rec := recover()
-		if rec != nil {
-			fmt.Printf("input bytes: %s", b)
-			panic(rec)
-		}
-	}()
-	b = replaceValue(b, "event_id", placeholdEventID)
-	b = replaceValue(b, "sent_at", placeholdTimestamp)
-	b = replaceValue(b, "timestamp", placeholdTimestamp)
-	b = replaceValue(b, "dsn", placeholdDSN)
-	return b
-}
-
 // Test received data from instrumented command calls.
-func TestCommands(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +57,7 @@ func TestCommands(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			*received = append(*received, replaceAll(body.Bytes()))
+			*received = append(*received, body.Bytes())
 		}))
 		t.Cleanup(func() {
 			server.Close()
@@ -117,6 +69,8 @@ func TestCommands(t *testing.T) {
 	type call struct {
 		args []string
 	}
+
+	dec := jx.GetDecoder()
 
 	// Sets of platform tests.
 	for _, platform := range []struct {
@@ -133,7 +87,7 @@ func TestCommands(t *testing.T) {
 				fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
 				fmt.Sprintf("GOPATH=%s", os.Getenv("GOPATH")),
 			},
-			args: []string{"run", "./command"},
+			args: []string{"run", "./"},
 			calls: []call{
 				{args: []string{"captureException"}},
 				{args: []string{"captureMessage"}},
@@ -142,6 +96,7 @@ func TestCommands(t *testing.T) {
 				{args: []string{"captureExceptionScoped"}},
 				{args: []string{"captureExceptionWrapped"}},
 				{args: []string{"panic"}},
+				{args: []string{"withRequest"}},
 			},
 		},
 		{
@@ -153,6 +108,9 @@ func TestCommands(t *testing.T) {
 				{args: []string{"division_by_zero"}},
 				{args: []string{"custom_exception"}},
 				{args: []string{"with_breadcrumbs"}},
+				{args: []string{"raise_new_during_except"}},
+				{args: []string{"raise_same_during_except"}},
+				{args: []string{"raise_same_during_capture"}},
 			},
 		},
 	} {
@@ -186,11 +144,35 @@ func TestCommands(t *testing.T) {
 				}
 
 				for i, b := range received {
-					if saveGoldenFiles {
-						name := fmt.Sprintf("%s_%s_%d.json", platform.path, lastarg, i)
-						saveGoldenFile(t, name, b)
+					if saveJSON {
+						name := path.Join("testdata", fmt.Sprintf("%s_%s_%d.json", platform.path, lastarg, i))
+						file, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+						if err != nil {
+							t.Fatal(err)
+						}
+						var o bytes.Buffer
+						for start := 0; start < len(b); {
+							end := bytes.Index(b[start:], []byte("}\n"))
+							if end < 1 {
+								break
+							}
+							end += start + 2
+							if err = json.Indent(&o, b[start:end], "", "  "); err != nil {
+								t.Fatalf("indent [%d:%d] = %v", start, end, err)
+							}
+							start = end
+						}
+						if _, err = o.WriteTo(file); err != nil {
+							t.Fatal(err)
+						}
 					} else {
 						t.Logf("request %d: %s", i, b)
+					}
+
+					dec.ResetBytes(b)
+					env := new(decoder.Envelope)
+					if err = env.Decode(dec); err != nil {
+						t.Fatal(err)
 					}
 				}
 

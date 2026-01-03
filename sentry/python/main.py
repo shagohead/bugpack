@@ -53,5 +53,36 @@ def with_breadcrumbs():
     sentry_sdk.capture_message("test message", level="fatal")
 
 
+def raise_new_during_except():
+    try:
+        try:
+            print(1 / 0)
+        except Exception as err:
+            raise RuntimeError("other exception") from err
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
+
+def raise_same_during_except():
+    try:
+        try:
+            print(1 / 0)
+        except Exception as err:
+            raise err
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
+
+def raise_same_during_capture():
+    try:
+        try:
+            print(1 / 0)
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            raise err
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
+
 if __name__ == "__main__":
     main()

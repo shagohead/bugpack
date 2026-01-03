@@ -1,3 +1,137 @@
-{"event_id":"e51b3c5ce3b34c7b898e4e830ef62432","sent_at":"2025-12-27T14:53:00Z","trace":{"trace_id":"noop_trace_id","environment":"production","release":"test","public_key":"username"}}
-{"type":"event","content_type":"application/json","length":2018}
-{"level":"error","exception":{"values":[{"mechanism":{"type":"generic","handled":true},"module":"custom_exc","type":"CustomException","value":"exception message","stacktrace":{"frames":[{"filename":"main.py","abs_path":"/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py","function":"custom_exception","module":"__main__","lineno":45,"pre_context":["        sentry_sdk.capture_exception(err)","","","def custom_exception():","    try:"],"context_line":"        custom_exc.raise_exc()","post_context":["    except Exception as err:","        sentry_sdk.capture_exception(err)","","","def with_breadcrumbs():"],"vars":{"err":"CustomException('exception message')"},"in_app":true},{"filename":"custom_exc.py","abs_path":"/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/custom_exc.py","function":"raise_exc","module":"custom_exc","lineno":6,"pre_context":["class CustomException(Exception):","    pass","","","def raise_exc():"],"context_line":"    raise CustomException(\"exception message\")","post_context":[],"vars":{},"in_app":true}]}}]},"event_id":"e51b3c5ce3b34c7b898e4e830ef62432","timestamp":"2025-12-27T14:53:00Z","contexts":{"trace":{"trace_id":"noop_trace_id","span_id":"noop_span_id","parent_span_id":null},"runtime":{"name":"CPython","version":"3.13.3","build":"3.13.3 (main, May 25 2025, 17:02:31) [Clang 17.0.0 (clang-1700.0.13.3)]"}},"transaction_info":{},"breadcrumbs":{"values":[]},"extra":{"sys.argv":["/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py","custom_exception"]},"modules":{"pip":"25.2","urllib3":"2.5.0","django":"5.2.6","sentry-sdk":"2.37.0","certifi":"2025.8.3","asgiref":"3.9.1","sqlparse":"0.5.3"},"release":"test","environment":"production","server_name":"MacBook-Pro-A.local","sdk":{"name":"sentry.python.django","version":"2.37.0","packages":[{"name":"pypi:sentry-sdk","version":"2.37.0"}],"integrations":["argv","atexit","dedupe","django","excepthook","logging","modules","stdlib","threading"]},"platform":"python"}
+{
+  "event_id": "ab3451b5701a4978a6d574e41e1748e2",
+  "sent_at": "2026-01-03T12:17:33.335468Z",
+  "trace": {
+    "trace_id": "noop_trace_id",
+    "environment": "production",
+    "release": "test",
+    "public_key": "username"
+  }
+}
+{
+  "type": "event",
+  "content_type": "application/json",
+  "length": 2018
+}
+{
+  "level": "error",
+  "exception": {
+    "values": [
+      {
+        "mechanism": {
+          "type": "generic",
+          "handled": true
+        },
+        "module": "custom_exc",
+        "type": "CustomException",
+        "value": "exception message",
+        "stacktrace": {
+          "frames": [
+            {
+              "filename": "main.py",
+              "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
+              "function": "custom_exception",
+              "module": "__main__",
+              "lineno": 45,
+              "pre_context": [
+                "        sentry_sdk.capture_exception(err)",
+                "",
+                "",
+                "def custom_exception():",
+                "    try:"
+              ],
+              "context_line": "        custom_exc.raise_exc()",
+              "post_context": [
+                "    except Exception as err:",
+                "        sentry_sdk.capture_exception(err)",
+                "",
+                "",
+                "def with_breadcrumbs():"
+              ],
+              "vars": {
+                "err": "CustomException('exception message')"
+              },
+              "in_app": true
+            },
+            {
+              "filename": "custom_exc.py",
+              "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/custom_exc.py",
+              "function": "raise_exc",
+              "module": "custom_exc",
+              "lineno": 6,
+              "pre_context": [
+                "class CustomException(Exception):",
+                "    pass",
+                "",
+                "",
+                "def raise_exc():"
+              ],
+              "context_line": "    raise CustomException(\"exception message\")",
+              "post_context": [],
+              "vars": {},
+              "in_app": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "event_id": "ab3451b5701a4978a6d574e41e1748e2",
+  "timestamp": "2026-01-03T12:17:33.332388Z",
+  "contexts": {
+    "trace": {
+      "trace_id": "noop_trace_id",
+      "span_id": "noop_span_id",
+      "parent_span_id": null
+    },
+    "runtime": {
+      "name": "CPython",
+      "version": "3.13.3",
+      "build": "3.13.3 (main, May 25 2025, 17:02:31) [Clang 17.0.0 (clang-1700.0.13.3)]"
+    }
+  },
+  "transaction_info": {},
+  "breadcrumbs": {
+    "values": []
+  },
+  "extra": {
+    "sys.argv": [
+      "/Users/shagohead/src/github.com/shagohead/bugback/sentry/python/main.py",
+      "custom_exception"
+    ]
+  },
+  "modules": {
+    "pip": "25.2",
+    "urllib3": "2.5.0",
+    "django": "5.2.6",
+    "sentry-sdk": "2.37.0",
+    "certifi": "2025.8.3",
+    "asgiref": "3.9.1",
+    "sqlparse": "0.5.3"
+  },
+  "release": "test",
+  "environment": "production",
+  "server_name": "MacBook-Pro-A.local",
+  "sdk": {
+    "name": "sentry.python.django",
+    "version": "2.37.0",
+    "packages": [
+      {
+        "name": "pypi:sentry-sdk",
+        "version": "2.37.0"
+      }
+    ],
+    "integrations": [
+      "argv",
+      "atexit",
+      "dedupe",
+      "django",
+      "excepthook",
+      "logging",
+      "modules",
+      "stdlib",
+      "threading"
+    ]
+  },
+  "platform": "python"
+}

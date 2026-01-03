@@ -1,7 +1,9 @@
 package decoder
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -95,7 +97,9 @@ type Event struct {
 	EventID     string
 	Message     string
 	Exception   Array[Exception, *Exception]
+	Request     *Request
 	Timestamp   time.Time
+	// Breadcrumbs Array[Breadcrumb, *Breadcrumb]
 }
 
 func (e *Event) Decode(d *jx.Decoder) error {
@@ -128,12 +132,9 @@ func (e *Event) Decode(d *jx.Decoder) error {
 		case "exception":
 			err = e.decodeException(d)
 		case "timestamp":
-			var s string
-			s, err = d.Str()
-			if err != nil {
-				break
-			}
-			e.Timestamp, err = time.Parse(time.RFC3339Nano, s)
+			err = e.decodeTimestamp(d)
+		case "request":
+			err = e.decodeRequest(d)
 		default:
 			err = d.Skip()
 		}
@@ -142,6 +143,50 @@ func (e *Event) Decode(d *jx.Decoder) error {
 		}
 		return err
 	})
+}
+
+func (e *Event) decodeTimestamp(d *jx.Decoder) error {
+	switch d.Next() {
+	case jx.Number:
+		raw, err := d.Raw()
+		if err != nil {
+			return err
+		}
+		dot := bytes.IndexRune(raw, '.')
+		if dot < 1 {
+			n, err := d.Int64()
+			if err != nil {
+				return err
+			}
+			e.Timestamp = time.Unix(n, 0)
+			return nil
+		}
+		s, err := strconv.ParseInt(string(raw[0:dot]), 10, 64)
+		if err != nil {
+			return err
+		}
+		n, err := strconv.ParseInt(string(raw[dot+1:]), 10, 64)
+		if err != nil {
+			return err
+		}
+		if l := len(raw[dot+1:]); l < 4 {
+			n *= 1000_000
+		} else if l < 7 {
+			n *= 1000
+		}
+		e.Timestamp = time.Unix(s, n)
+		return nil
+	case jx.String:
+		var s string
+		s, err := d.Str()
+		if err != nil {
+			return err
+		}
+		e.Timestamp, err = time.Parse(time.RFC3339Nano, s)
+		return err
+	default:
+		return fmt.Errorf("unexpected `timestamp` type: %s", d.Next().String())
+	}
 }
 
 func (e *Event) decodeExtra(d *jx.Decoder) error {
@@ -204,6 +249,48 @@ func (s *SDK) Decode(d *jx.Decoder) error {
 	})
 }
 
+type Request struct {
+	URL         string
+	Method      string
+	Data        string
+	QueryString string
+	Cookies     string
+	Headers     map[string]string
+	Environ     map[string]string
+}
+
+func (e *Event) decodeRequest(d *jx.Decoder) error {
+	var r *Request
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		if r == nil {
+			e.Request = new(Request)
+			r = e.Request
+		}
+		switch string(key) {
+		case "url":
+			r.URL, err = d.Str()
+		case "method":
+			r.Method, err = d.Str()
+		case "data":
+			r.Data, err = d.Str()
+		case "query_string":
+			r.QueryString, err = d.Str()
+		case "cookies":
+			r.Cookies, err = d.Str()
+		case "headers":
+			err = decodeStrMap(d, &r.Headers)
+		case "env":
+			err = decodeStrMap(d, &r.Environ)
+		default:
+			err = d.Skip()
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
+}
+
 type Decoder interface {
 	Decode(*jx.Decoder) error
 }
@@ -223,6 +310,25 @@ func (a *Array[T, PT]) Decode(d *jx.Decoder) error {
 		*a = append(*a, i)
 		return nil
 	})
+}
+
+type Level string
+
+const (
+	LevelDebug   Level = "debug"
+	LevelInfo    Level = "info"
+	LevelWarning Level = "warning"
+	LevelError   Level = "error"
+	LevelFatal   Level = "fatal"
+)
+
+type Breadcrumb struct {
+	Type      string
+	Category  string
+	Message   string
+	Data      map[string]any
+	Level     Level
+	Timestamp time.Time
 }
 
 type Exception struct {
