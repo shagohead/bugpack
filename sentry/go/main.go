@@ -29,6 +29,7 @@ func run() error {
 			event.Timestamp = timestamp
 			return event
 		},
+		SendDefaultPII: true,
 	}); err != nil {
 		return err
 	}
