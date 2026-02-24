@@ -13,13 +13,13 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/shagohead/bugpack/bugpack/envelope/decoder"
+	"github.com/shagohead/bugpack/bugpack/envelope"
 )
 
 // Batcher accumulates events in buffer, which will be enqueued for flushing into DBMS.
 type Batcher interface {
 	// Batch the event. Safe for concurrent use.
-	Batch(e *decoder.Envelope)
+	Batch(e *envelope.Envelope)
 
 	// Start goroutines and wait they until they are finished.
 	Serve() error
@@ -30,7 +30,7 @@ type Batcher interface {
 
 type Buffer interface {
 	// Append event into buffer. Should return true if buffer is full.
-	Append(*decoder.Envelope) bool
+	Append(*envelope.Envelope) bool
 
 	// Flush buffer into DBMS and reset it's underlying resources for reuse.
 	// This method should concern about context lifetime.
@@ -56,18 +56,18 @@ var DefaultConfig = Config{
 
 type Config struct {
 	FlushContext context.Context
-	FlushWorkers int
-	BatchTimeout time.Duration
-	FlushTimeout time.Duration
-	RetryBackoff ConfigBackoff
+	FlushWorkers int           `yaml:"flush_workers"`
+	BatchTimeout time.Duration `yaml:"batch_timeout"`
+	FlushTimeout time.Duration `yaml:"flush_timeout"`
+	RetryBackoff ConfigBackoff `yaml:"retry_backoff"`
 }
 
 type ConfigBackoff struct {
-	Enable              bool
-	InitialInterval     time.Duration
-	RandomizationFactor float64
-	Multiplier          float64
-	MaxInterval         time.Duration
+	Enable              bool          `yaml:"enable"`
+	InitialInterval     time.Duration `yaml:"initial_interval"`
+	RandomizationFactor float64       `yaml:"randomization_factor"`
+	Multiplier          float64       `yaml:"multiplier"`
+	MaxInterval         time.Duration `yaml:"max_interval"`
 }
 
 func New(factory func() Buffer, config Config) Batcher {
@@ -84,7 +84,7 @@ func New(factory func() Buffer, config Config) Batcher {
 		conf:      config,
 		pool:      &sync.Pool{New: func() any { return factory() }},
 		done:      make(chan struct{}),
-		events:    make(chan *decoder.Envelope),
+		events:    make(chan *envelope.Envelope),
 		toflash:   make(chan Buffer),
 		tracer:    otel.GetTracerProvider().Tracer("bugpack/batcher"),
 		ctxflash:  ctx,
@@ -97,15 +97,15 @@ type batcher struct {
 	conf      Config
 	pool      *sync.Pool
 	done      chan struct{}
-	events    chan *decoder.Envelope
-	toflash   chan Buffer     // To workers from receiver. Closed with receiver.
+	events    chan *envelope.Envelope
+	toflash   chan Buffer     // Transmitter from receiver to workers. Closed with receiver.
 	ctxflash  context.Context // Flushing context. Canceled after first worker error.
 	stopflash func()
 	tracer    trace.Tracer
 }
 
 // Batch implements Batcher.
-func (b *batcher) Batch(e *decoder.Envelope) {
+func (b *batcher) Batch(e *envelope.Envelope) {
 	select {
 	case b.events <- e:
 	case <-b.done:

@@ -17,16 +17,18 @@ import (
 
 	"github.com/go-faster/jx"
 
-	"github.com/shagohead/bugpack/bugpack/envelope/decoder"
+	"github.com/shagohead/bugpack/bugpack/envelope"
 )
 
 var (
 	saveJSON      bool
+	logRequest    bool
 	captureOutput bool
 )
 
 func TestMain(t *testing.M) {
 	flag.BoolVar(&saveJSON, "save-json", false, "Save events JSON data in testdata dir")
+	flag.BoolVar(&logRequest, "log-request", false, "Log requests bodies")
 	flag.BoolVar(&captureOutput, "capture-output", false, "Capture subprocess STDOUT & STDERR")
 	flag.Parse()
 	os.Exit(t.Run())
@@ -40,8 +42,12 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// Serve client requests.
-	serve := func(t *testing.T, received *[][]byte) string {
+	serve := func(t *testing.T, received *[][]byte, logURL bool) string {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if logURL {
+				t.Logf("RequestURI: %s", r.RequestURI)
+				t.Logf("X-Sentry-Auth: %s", r.Header.Get("X-Sentry-Auth"))
+			}
 			var body bytes.Buffer
 			switch r.Header.Get("Content-Encoding") {
 			case "gzip":
@@ -49,6 +55,7 @@ func TestIntegration(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				defer zr.Close()
 				if _, err = io.Copy(&body, zr); err != nil {
 					t.Fatal(err)
 				}
@@ -56,6 +63,8 @@ func TestIntegration(t *testing.T) {
 				if _, err = io.Copy(&body, r.Body); err != nil {
 					t.Fatal(err)
 				}
+			default:
+				t.Fatalf("Unexpected encoding: %s", r.Header.Get("Content-Encoding"))
 			}
 			*received = append(*received, body.Bytes())
 		}))
@@ -114,18 +123,21 @@ func TestIntegration(t *testing.T) {
 			},
 		},
 	} {
-		for _, call := range platform.calls {
+		for idx, call := range platform.calls {
 			lastarg := call.args[len(call.args)-1]
 			t.Run(fmt.Sprintf("%s/%s", platform.path, lastarg), func(t *testing.T) {
 
 				var received [][]byte
-				serverURL := serve(t, &received)
+				serverURL := serve(t, &received, idx == 0)
 				dsn, err := url.Parse(serverURL)
 				if err != nil {
 					t.Fatal(err)
 				}
-				dsn.User = url.User("username")
-				dsn.Path = "/1"
+				dsn.User = url.UserPassword("projectuser", "projectpass")
+				dsn.Path = "/prefix/0"
+				if idx == 0 {
+					t.Logf("DSN=%s", dsn.String())
+				}
 
 				cmd := exec.Command(platform.exec, append(platform.args, call.args...)...)
 				cmd.Env = append(platform.env, fmt.Sprintf("DSN=%s", dsn.String()))
@@ -139,7 +151,7 @@ func TestIntegration(t *testing.T) {
 				}
 				if n := len(received); n == 0 {
 					t.Fatal("received 0 requests")
-				} else {
+				} else if n > 1 {
 					t.Logf("received %d requests", n)
 				}
 
@@ -166,11 +178,13 @@ func TestIntegration(t *testing.T) {
 							t.Fatal(err)
 						}
 					} else {
-						t.Logf("request %d: %s", i, b)
+						if logRequest {
+							t.Logf("request %d: %s", i, b)
+						}
 					}
 
 					dec.ResetBytes(b)
-					env := new(decoder.Envelope)
+					env := new(envelope.Envelope)
 					if err = env.Decode(dec); err != nil {
 						t.Fatal(err)
 					}

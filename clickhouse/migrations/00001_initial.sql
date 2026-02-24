@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS issue_status
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`Status` UInt8,
 	`Writed` DateTime64(6)
@@ -14,7 +14,7 @@ TTL toDateTime(Writed) + toIntervalDay(30);
 
 CREATE TABLE IF NOT EXISTS issue_event
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`Level` LowCardinality(String) CODEC(ZSTD(1)),
 	`Message` String CODEC(ZSTD(1)),
 	`Exception` Tuple(
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS issue_event
 	INDEX idx_tags_value mapValues(Tags) TYPE bloom_filter(0.01) GRANULARITY 1
 )
 ENGINE = MergeTree
-PARTITION BY toDate(Timestamp)
+PARTITION BY (toDate(Timestamp), Project)
 ORDER BY (Project, Timestamp)
 TTL toDateTime(Timestamp) + toIntervalDay(15)
 SETTINGS ttl_only_drop_parts = 1;
@@ -73,7 +73,7 @@ SETTINGS ttl_only_drop_parts = 1;
 -- NOTE: Возможно стоит добавить какую-то информацию для определения хранимой ошибки? Тогда можно будет и TTL увеличить.
 CREATE TABLE IF NOT EXISTS issue_stat
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
 	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
@@ -86,7 +86,7 @@ TTL toDateTime(LastSeen) + toIntervalDay(30);
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS issue_stat_mv TO issue_stat
 (
-	`Project` UInt64,
+	`Project` LowCardinality(String),
 	`IssueHash` UInt64,
 	`FirstSeen` DateTime64(6),
 	`LastSeen` DateTime64(6),
@@ -103,7 +103,7 @@ GROUP BY Project, IssueHash;
 
 CREATE TABLE IF NOT EXISTS issue_client
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`ClientIP` String CODEC(ZSTD(1)),
 	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
@@ -117,7 +117,7 @@ TTL toDateTime(LastSeen) + toIntervalDay(30);
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS issue_client_mv TO issue_client
 (
-	`Project` UInt64,
+	`Project` LowCardinality(String),
 	`IssueHash` UInt64,
 	`ClientIP` String,
 	`FirstSeen` DateTime64(6),
@@ -136,7 +136,7 @@ GROUP BY Project, IssueHash, ClientIP;
 
 CREATE TABLE IF NOT EXISTS issue_user
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`User` Tuple(ID String, IP String, Email String, Username String, Name String) CODEC(ZSTD(1)),
 	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
@@ -150,7 +150,7 @@ TTL toDateTime(LastSeen) + toIntervalDay(30);
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS issue_user_mv TO issue_user
 (
-	`Project` UInt64,
+	`Project` LowCardinality(String),
 	`IssueHash` UInt64,
 	`User` Tuple(ID String, IP String, Email String, Username String, Name String),
 	`FirstSeen` DateTime64(6),
@@ -169,7 +169,7 @@ GROUP BY Project, IssueHash, User;
 
 CREATE TABLE IF NOT EXISTS issue_tag
 (
-	`Project` UInt32 CODEC(ZSTD(1)),
+	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`Key` String CODEC(ZSTD(1)),
 	`Value` String CODEC(ZSTD(1)),
@@ -184,7 +184,7 @@ TTL toDateTime(LastSeen) + toIntervalDay(30);
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS issue_tag_mv TO issue_tag
 (
-	`Project` UInt64,
+	`Project` LowCardinality(String),
 	`IssueHash` UInt64,
 	`Key` String,
 	`Value` String,

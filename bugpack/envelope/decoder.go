@@ -1,4 +1,4 @@
-package decoder
+package envelope
 
 import (
 	"bytes"
@@ -9,12 +9,6 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
-
-type Envelope struct {
-	Meta
-	Header
-	Event
-}
 
 func (e *Envelope) Decode(d *jx.Decoder) (err error) {
 	if err = e.Meta.Decode(d); err != nil {
@@ -27,11 +21,6 @@ func (e *Envelope) Decode(d *jx.Decoder) (err error) {
 		return errors.Wrap(err, "event object")
 	}
 	return nil
-}
-
-type Meta struct {
-	EventID string
-	SentAt  time.Time
 }
 
 func (m *Meta) Decode(d *jx.Decoder) error {
@@ -56,16 +45,11 @@ func (m *Meta) Decode(d *jx.Decoder) error {
 	})
 }
 
-type Header struct {
-	Type        string
-	ContentType string
-	Length      int
-}
-
 func (h *Header) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
 		case "type":
+			// TODO: Skip other than `event` completly.
 			h.Type, err = d.Str()
 		case "content_type":
 			h.ContentType, err = d.Str()
@@ -82,25 +66,6 @@ func (h *Header) Decode(d *jx.Decoder) error {
 }
 
 // TODO: использовать unique для SDK, Platform, и прочих низко-кардинальных значений.
-
-type Event struct {
-	SDK         SDK
-	Platform    string
-	ServerName  string
-	Environment string
-	Release     string
-	Level       string
-	Contexts    map[string]any
-	Extra       map[string]any
-	User        map[string]any
-	Tags        map[string]string
-	EventID     string
-	Message     string
-	Exception   Array[Exception, *Exception]
-	Request     *Request
-	Timestamp   time.Time
-	// Breadcrumbs Array[Breadcrumb, *Breadcrumb]
-}
 
 func (e *Event) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
@@ -227,11 +192,6 @@ func (e *Event) decodeException(d *jx.Decoder) error {
 	}
 }
 
-type SDK struct {
-	Name    string
-	Version string
-}
-
 func (s *SDK) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
@@ -247,16 +207,6 @@ func (s *SDK) Decode(d *jx.Decoder) error {
 		}
 		return err
 	})
-}
-
-type Request struct {
-	URL         string
-	Method      string
-	Data        string
-	QueryString string
-	Cookies     string
-	Headers     map[string]string
-	Environ     map[string]string
 }
 
 func (e *Event) decodeRequest(d *jx.Decoder) error {
@@ -312,32 +262,6 @@ func (a *Array[T, PT]) Decode(d *jx.Decoder) error {
 	})
 }
 
-type Level string
-
-const (
-	LevelDebug   Level = "debug"
-	LevelInfo    Level = "info"
-	LevelWarning Level = "warning"
-	LevelError   Level = "error"
-	LevelFatal   Level = "fatal"
-)
-
-type Breadcrumb struct {
-	Type      string
-	Category  string
-	Message   string
-	Data      map[string]any
-	Level     Level
-	Timestamp time.Time
-}
-
-type Exception struct {
-	Module string
-	Type   string
-	Value  string
-	Frames Array[Frame, *Frame]
-}
-
 func (e *Exception) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
@@ -351,6 +275,8 @@ func (e *Exception) Decode(d *jx.Decoder) error {
 			e.Type, err = d.Str()
 		case "value":
 			e.Value, err = d.Str()
+		case "mechanism":
+			err = e.Mechanism.Decode(d)
 		case "stacktrace":
 			err = e.decodeStacktrace(d)
 		default:
@@ -378,17 +304,23 @@ func (e *Exception) decodeStacktrace(d *jx.Decoder) error {
 	})
 }
 
-type Frame struct {
-	Filename string
-	AbsPath  string
-	Module   string
-	Function string
-	LineNum  int
-	CtxLine  string
-	PreCtx   []string
-	PostCtx  []string
-	Vars     map[string]any
-	InApp    bool
+func (m *Mechanism) Decode(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		switch string(key) {
+		case "exception_id":
+			m.ID, err = d.Int()
+		case "parent_id":
+			m.PID, err = d.Int()
+		case "is_exception_group":
+			m.Group, err = d.Bool()
+		default:
+			err = d.Skip()
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
 }
 
 func (f *Frame) Decode(d *jx.Decoder) error {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -9,11 +11,23 @@ import (
 func main() {
 	ctx := context.Background()
 	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	if err := run(ctx, log); err != nil {
-		os.Stderr.WriteString(err.Error() + "\n")
+	slog.SetDefault(log)
+	if err := run(ctx); err != nil {
+		log.LogAttrs(ctx, slog.LevelError, err.Error())
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, log *slog.Logger) error {
+func run(ctx context.Context) error {
+	flag.Parse()
+	var cmd func(context.Context, string, []string) error
+	switch flag.Arg(0) {
+	case "server":
+		cmd = server
+	case "":
+		return fmt.Errorf("missing command argument")
+	default:
+		return fmt.Errorf("unknown command %s", flag.Arg(0))
+	}
+	return cmd(ctx, flag.Arg(0), flag.Args())
 }

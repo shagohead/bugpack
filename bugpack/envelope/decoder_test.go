@@ -1,4 +1,4 @@
-package decoder
+package envelope
 
 import (
 	"io"
@@ -13,12 +13,14 @@ import (
 var (
 	envelopeArrayExceptions []byte
 	envelopeObjectException []byte
+	envelopeSession         []byte
 )
 
 func init() {
 	for key, dst := range map[string]*[]byte{
 		"envelope_object_exception": &envelopeObjectException,
 		"envelope_array_exceptions": &envelopeArrayExceptions,
+		"envelope_session":          &envelopeSession,
 	} {
 		f, err := os.Open(path.Join("testdata", key+".json"))
 		if err != nil {
@@ -41,9 +43,19 @@ func TestDecode(t *testing.T) {
 		}
 		t.Logf("decoded envelope: %+v", *e)
 	})
+
 	t.Run("array-exceptions", func(t *testing.T) {
 		e := new(Envelope)
 		d.ResetBytes(envelopeArrayExceptions)
+		if err := e.Decode(d); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("decoded envelope: %+v", *e)
+	})
+
+	t.Run("session", func(t *testing.T) {
+		e := new(Envelope)
+		d.ResetBytes(envelopeSession)
 		if err := e.Decode(d); err != nil {
 			t.Fatal(err)
 		}
@@ -53,6 +65,7 @@ func TestDecode(t *testing.T) {
 
 func BenchmarkDecode(b *testing.B) {
 	d := jx.GetDecoder()
+
 	b.Run("object-exception", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
@@ -62,6 +75,7 @@ func BenchmarkDecode(b *testing.B) {
 			}
 		}
 	})
+
 	b.Run("array-exceptions", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

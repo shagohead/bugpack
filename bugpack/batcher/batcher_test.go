@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-faster/errors"
 
-	"github.com/shagohead/bugpack/bugpack/envelope/decoder"
+	"github.com/shagohead/bugpack/bugpack/envelope"
 )
 
 type action int // buffer tracking actions.
@@ -20,11 +20,16 @@ const (
 	actionCancel
 )
 
+// Behaviour of Flush method for one call.
 type flush struct {
 	d time.Duration // Delay before flush returns.
 	e error         // Returning error.
 }
 
+// Buffer mocking object.
+//
+// On every Flush call buffer trying receive from fsh channel.
+// If there is no data in fsh channel, it method just returns nil.
 type buffer struct {
 	len int
 	cap int
@@ -33,7 +38,7 @@ type buffer struct {
 }
 
 // Append implements Buffer.
-func (b *buffer) Append(e *decoder.Envelope) bool {
+func (b *buffer) Append(e *envelope.Envelope) bool {
 	b.act <- actionAppend
 	b.len++
 	return b.len == b.cap
@@ -85,7 +90,7 @@ func TestBatcher(t *testing.T) {
 		conf Config
 		blen int           // Initial buffer length.
 		bcap int           // Buffer capacity.
-		flsh []flush       // Behaviour for Flush calls.
+		flsh []flush       // Behaviour of Flush method on calls.
 		send int           // Count of Batch calls.
 		wait time.Duration // Wait duration after `send` Batch calls.
 		shut bool          // Call Shutdown before test assertions.
@@ -190,7 +195,7 @@ func TestBatcher(t *testing.T) {
 				}()
 				synctest.Wait()
 				for range tt.send {
-					b.Batch(&decoder.Envelope{})
+					b.Batch(&envelope.Envelope{})
 				}
 				if tt.wait > 0 {
 					time.Sleep(tt.wait)
@@ -224,9 +229,9 @@ func TestBatcher(t *testing.T) {
 
 func TestPoolBufferReuse(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		a := make(chan action)   // Just for using [buffer] type.
+		a := make(chan action)   // Just for using [buffer] type (which sends into chan).
 		n := make(chan struct{}) // Channel for counting New() calls.
-		var buffers int
+		var buffers int          // Created buffers by New().
 		go func() {
 			for {
 				select {
@@ -240,13 +245,14 @@ func TestPoolBufferReuse(t *testing.T) {
 		}()
 		f := func() Buffer {
 			n <- struct{}{}
-			return &buffer{cap: 1, act: a} // cap: 1 event == 1 buffer.
+			return &buffer{cap: 1, act: a} // cap 1: one buffer fully fills by one event.
 		}
+		// Only one flushing worker for test simplicity.
 		b := New(f, Config{FlushWorkers: 1, BatchTimeout: time.Second})
 		go b.Serve()
 		c := 20 // Sended events count.
 		for range c {
-			b.Batch(&decoder.Envelope{})
+			b.Batch(&envelope.Envelope{})
 		}
 		b.Shutdown()
 		synctest.Wait()
@@ -257,6 +263,7 @@ func TestPoolBufferReuse(t *testing.T) {
 		if buffers > c/2 {
 			t.Fatalf("Created buffers: %v, expected no more than a half of %v", buffers, c)
 		}
+		t.Logf("Created buffers during test: %v. Batch calls: %v", buffers, c)
 	})
 }
 
@@ -269,4 +276,37 @@ func strerrs(got, want error) (string, string) {
 		w = want.Error()
 	}
 	return g, w
+}
+
+func BenchmarkBatcher(b *testing.B) {
+	batcher := New(func() Buffer {
+		b := make(arrbuffer, 0, 1000)
+		return &b
+	}, DefaultConfig)
+	go func() {
+		batcher.Serve()
+	}()
+	event := new(envelope.Envelope)
+	for b.Loop() {
+		batcher.Batch(event)
+	}
+}
+
+type arrbuffer []*envelope.Envelope
+
+// Append implements Buffer.
+func (a *arrbuffer) Append(e *envelope.Envelope) bool {
+	*a = append(*a, e)
+	return len(*a) == cap(*a)
+}
+
+// Empty implements Buffer.
+func (a *arrbuffer) Empty() bool {
+	return len(*a) == 0
+}
+
+// Flush implements Buffer.
+func (a *arrbuffer) Flush(context.Context) error {
+	*a = (*a)[:0]
+	return nil
 }
