@@ -1,5 +1,3 @@
--- +goose Up
--- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS issue_status
 (
 	`Project` LowCardinality(String) CODEC(ZSTD(1)),
@@ -203,4 +201,3 @@ AS SELECT
 FROM issue_event
 ARRAY JOIN Tags.keys AS Key, Tags.values AS Value
 GROUP BY Project, IssueHash, Key, Value;
--- +goose StatementEnd
