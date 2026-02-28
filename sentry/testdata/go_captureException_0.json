@@ -1,20 +1,20 @@
 {
-  "event_id": "649ef6ce33f54a9686bad475e704922f",
-  "sent_at": "2026-01-03T01:44:29.386995+03:00",
-  "dsn": "http://username@127.0.0.1:60177/1",
+  "event_id": "c5722ddacd054312b76875b77fa7dd0a",
+  "sent_at": "2026-02-28T00:26:56.183457+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55452/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
 {
   "type": "event",
-  "length": 2324
+  "length": 2300
 }
 {
   "contexts": {
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "649ef6ce33f54a9686bad475e704922f",
+  "event_id": "c5722ddacd054312b76875b77fa7dd0a",
   "level": "error",
   "platform": "go",
   "sdk": {
@@ -76,8 +76,8 @@
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -98,8 +98,8 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 54,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 57,
             "pre_context": [
               "\tcase \"panic\":",
               "\t\traisePanic()",
@@ -120,8 +120,8 @@
           {
             "function": "captureException",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 78,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 83,
             "pre_context": [
               "func captureMessage() {",
               "\tsentry.CaptureMessage(\"manual text message\")",

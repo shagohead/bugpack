@@ -20,7 +20,10 @@ func Load(filePath string) (*Config, error) {
 	}
 	defer f.Close()
 	c := new(Config)
-	return c, c.configure(f)
+	if err = c.configure(f); err != nil {
+		return nil, fmt.Errorf("configure from %s: %v", filePath, err)
+	}
+	return c, nil
 }
 
 type ctxKey int

@@ -87,7 +87,7 @@ func (e *Event) Decode(d *jx.Decoder) error {
 		case "message":
 			e.Message, err = d.Str()
 		case "contexts":
-			err = decodeMap(d, &e.Contexts, "")
+			err = e.decodeContexts(d)
 		case "extra":
 			err = e.decodeExtra(d)
 		case "user":
@@ -152,6 +152,37 @@ func (e *Event) decodeTimestamp(d *jx.Decoder) error {
 	default:
 		return fmt.Errorf("unexpected `timestamp` type: %s", d.Next().String())
 	}
+}
+
+func (e *Event) decodeContexts(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		if string(key) == "trace" {
+			err = e.decodeTrace(d)
+		} else {
+			err = decodeMap(d, &e.Contexts, "")
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
+}
+
+func (e *Event) decodeTrace(d *jx.Decoder) error {
+	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
+		switch string(key) {
+		case "span_id":
+			e.SpanID, err = d.Str()
+		case "trace_id":
+			e.TraceID, err = d.Str()
+		default:
+			err = d.Skip()
+		}
+		if err != nil {
+			err = errors.Wrap(err, string(key))
+		}
+		return err
+	})
 }
 
 func (e *Event) decodeExtra(d *jx.Decoder) error {
@@ -308,9 +339,9 @@ func (m *Mechanism) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
 		case "exception_id":
-			m.ID, err = d.Int()
+			m.ID, err = plusOne(d)
 		case "parent_id":
-			m.PID, err = d.Int()
+			m.Parent, err = plusOne(d)
 		case "is_exception_group":
 			m.Group, err = d.Bool()
 		default:
@@ -321,6 +352,14 @@ func (m *Mechanism) Decode(d *jx.Decoder) error {
 		}
 		return err
 	})
+}
+
+func plusOne(d *jx.Decoder) (int, error) {
+	v, err := d.Int()
+	if err == nil {
+		v += 1
+	}
+	return v, err
 }
 
 func (f *Frame) Decode(d *jx.Decoder) error {

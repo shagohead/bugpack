@@ -35,6 +35,10 @@ type handler struct {
 
 // ServeHTTP implements http.Handler.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "invalid method", http.StatusMethodNotAllowed)
+		return
+	}
 	auth := r.Header.Get(sentryAuthHeader)
 	span := trace.SpanFromContext(r.Context())
 	span.SetAttributes(attribute.String("envelope.sentry_auth", auth))
@@ -85,6 +89,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		attribute.String("envelope.environment", event.Environment),
 	)
 	span.SetStatus(codes.Ok, "")
+	event.Project = project.Name()
+	event.ClientIP = clientIP(r)
 	if !project.Filter(event) {
 		span.AddEvent("filtered out")
 		return
@@ -98,6 +104,22 @@ const (
 	sentryAuthParam  = "sentry_key="
 	sentryAuthNone   = ""
 )
+
+func clientIP(r *http.Request) string {
+	v := r.Header.Get("X-Forwarded-For")
+	if v == "" {
+		return r.RemoteAddr
+	}
+	i := strings.LastIndexByte(v, ',')
+	if i == -1 {
+		return r.RemoteAddr
+	}
+	ip := strings.TrimSpace(v[i+1:])
+	if len(ip) < 7 {
+		return r.RemoteAddr
+	}
+	return ip
+}
 
 // Decode projectkey from sentry auth header.
 func projectKey(s string) string {

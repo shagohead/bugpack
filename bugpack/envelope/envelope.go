@@ -6,6 +6,8 @@ type Envelope struct {
 	Meta
 	Header
 	Event
+	Project  string
+	ClientIP string
 }
 
 type Meta struct {
@@ -19,6 +21,8 @@ type Header struct {
 	Length      int
 }
 
+// TODO: Prepare Envelope by buffer and for buffer.
+
 type Event struct {
 	SDK         SDK
 	Platform    string
@@ -26,17 +30,18 @@ type Event struct {
 	Environment string
 	Release     string
 	Level       string
-	Contexts    map[string]any // TODO: Extract trace & span IDs. Store other as «nested JSON».
+	Contexts    map[string]any
 	Extra       map[string]any
-	User        map[string]any // TODO: Store as nested JSON like Contexts.
+	User        map[string]any
 	Tags        map[string]string
 	EventID     string
-	TraceID     string // TODO: Extract from Contexts.
-	SpanID      string // TODO: Extract from Contexts.
+	TraceID     string
+	SpanID      string
 	Message     string
 	Exception   Array[Exception, *Exception]
 	Request     *Request
 	Timestamp   time.Time
+	// TODO: Add breadcrumbs decoding.
 	// Breadcrumbs Array[Breadcrumb, *Breadcrumb]
 }
 
@@ -83,9 +88,9 @@ type Exception struct {
 }
 
 type Mechanism struct {
-	ID    int
-	PID   int
-	Group bool
+	ID     int
+	Parent int
+	Group  bool
 }
 
 type Frame struct {

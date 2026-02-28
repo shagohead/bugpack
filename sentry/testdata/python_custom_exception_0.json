@@ -1,11 +1,11 @@
 {
-  "event_id": "ab3451b5701a4978a6d574e41e1748e2",
-  "sent_at": "2026-01-03T12:17:33.335468Z",
+  "event_id": "c33b1dff939e481b975e1b96e3ef2247",
+  "sent_at": "2026-02-27T21:26:57.285088Z",
   "trace": {
     "trace_id": "noop_trace_id",
     "environment": "production",
     "release": "test",
-    "public_key": "username"
+    "public_key": "projectuser"
   }
 }
 {
@@ -76,8 +76,8 @@
       }
     ]
   },
-  "event_id": "ab3451b5701a4978a6d574e41e1748e2",
-  "timestamp": "2026-01-03T12:17:33.332388Z",
+  "event_id": "c33b1dff939e481b975e1b96e3ef2247",
+  "timestamp": "2026-02-27T21:26:57.281959Z",
   "contexts": {
     "trace": {
       "trace_id": "noop_trace_id",

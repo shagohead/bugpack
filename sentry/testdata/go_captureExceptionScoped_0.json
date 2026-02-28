@@ -1,20 +1,20 @@
 {
-  "event_id": "3143f733f3d04b1aab12f46974a3c77a",
-  "sent_at": "2026-01-03T01:44:29.811106+03:00",
-  "dsn": "http://username@127.0.0.1:60185/1",
+  "event_id": "a2d28ee86fb4464d911e00a439c2c6b4",
+  "sent_at": "2026-02-28T00:26:56.595037+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55460/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
 {
   "type": "event",
-  "length": 3345
+  "length": 3192
 }
 {
   "contexts": {
@@ -43,7 +43,7 @@
     }
   },
   "environment": "local",
-  "event_id": "3143f733f3d04b1aab12f46974a3c77a",
+  "event_id": "a2d28ee86fb4464d911e00a439c2c6b4",
   "extra": {
     "scope_extra_int": 42,
     "scope_extra_string": "extra string"
@@ -97,8 +97,8 @@
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -119,8 +119,8 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 60,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 63,
             "pre_context": [
               "\tcase \"captureExceptionMany\":",
               "\t\tcaptureExceptionMany()",
@@ -132,20 +132,20 @@
             "post_context": [
               "\tcase \"captureExceptionWrapped\":",
               "\t\tcaptureExceptionWrapped()",
-              "\tdefault:",
-              "\t\treturn fmt.Errorf(\"unknown command argument %q\", os.Args[1])",
-              "\t}"
+              "\tcase \"withRequest\":",
+              "\t\twithRequest()",
+              "\tdefault:"
             ],
             "in_app": true
           },
           {
             "function": "captureExceptionScoped",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 100,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 103,
             "pre_context": [
-              "",
-              "// TODO: Научиться аттачить скоуп/ивент к трейсу open-telemetry.",
+              "\t}()",
+              "}",
               "",
               "func captureExceptionScoped() {",
               "\thub := sentry.CurrentHub().Clone()"
@@ -163,8 +163,8 @@
           {
             "function": "func1",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 118,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 121,
             "pre_context": [
               "\t\t\tUsername:  \"example\",",
               "\t\t\tName:      \"Some User\",",

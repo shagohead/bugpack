@@ -62,5 +62,6 @@ type pfilter struct {
 func (c *Config) configure(src io.Reader) error {
 	c.ServerAddr = ":8080"
 	c.HealthPath = "/healtz"
+	c.Batcher = batcher.DefaultConfig
 	return c.unmarshal(src)
 }

@@ -189,7 +189,6 @@ func TestIntegration(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
-
 			})
 		}
 	}

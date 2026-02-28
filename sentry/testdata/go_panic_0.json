@@ -1,14 +1,14 @@
 {
-  "event_id": "f3a119d345d54f29bfc8d3746c006d4b",
-  "sent_at": "2026-01-03T01:44:30.017567+03:00",
-  "dsn": "http://username@127.0.0.1:60189/1",
+  "event_id": "7146dee602114c25876e454be98c66c5",
+  "sent_at": "2026-02-28T00:26:56.799261+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55465/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "f3a119d345d54f29bfc8d3746c006d4b",
+  "event_id": "7146dee602114c25876e454be98c66c5",
   "level": "fatal",
   "message": "manual panic from raisePanic",
   "platform": "go",

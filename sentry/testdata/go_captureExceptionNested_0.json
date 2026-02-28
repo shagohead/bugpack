@@ -1,20 +1,20 @@
 {
-  "event_id": "803056a2bf604eef80877d88b9b10dec",
-  "sent_at": "2026-01-03T01:44:29.70573+03:00",
-  "dsn": "http://username@127.0.0.1:60183/1",
+  "event_id": "d8a95c598f5f458c9d940f2489e429d4",
+  "sent_at": "2026-02-28T00:26:56.494652+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55458/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
 {
   "type": "event",
-  "length": 3302
+  "length": 3225
 }
 {
   "contexts": {
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "803056a2bf604eef80877d88b9b10dec",
+  "event_id": "d8a95c598f5f458c9d940f2489e429d4",
   "level": "error",
   "platform": "go",
   "sdk": {
@@ -76,8 +76,8 @@
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -98,8 +98,8 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 58,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 61,
             "pre_context": [
               "\tcase \"captureException\":",
               "\t\tcaptureException()",
@@ -113,15 +113,15 @@
               "\t\tcaptureExceptionScoped()",
               "\tcase \"captureExceptionWrapped\":",
               "\t\tcaptureExceptionWrapped()",
-              "\tdefault:"
+              "\tcase \"withRequest\":"
             ],
             "in_app": true
           },
           {
             "function": "captureExceptionNested",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 87,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 92,
             "pre_context": [
               "\tsentry.CaptureException(\u0026ManualError{Prop: 3})",
               "\tsentry.CaptureException(\u0026ManualError{Prop: 42})",
@@ -142,8 +142,8 @@
           {
             "function": "captureExceptionNestedChild",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 93,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 98,
             "pre_context": [
               "}",
               "",
@@ -155,17 +155,17 @@
             "post_context": [
               "}",
               "",
-              "// TODO: Научиться аттачить скоуп/ивент к трейсу open-telemetry.",
-              "",
-              "func captureExceptionScoped() {"
+              "func captureExceptionScoped() {",
+              "\thub := sentry.CurrentHub().Clone()",
+              "\thub.WithScope(func(scope *sentry.Scope) {"
             ],
             "in_app": true
           },
           {
             "function": "func1",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 92,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 97,
             "pre_context": [
               "\tcaptureExceptionNestedChild()",
               "}",
@@ -178,8 +178,8 @@
               "\t}()",
               "}",
               "",
-              "// TODO: Научиться аттачить скоуп/ивент к трейсу open-telemetry.",
-              ""
+              "func captureExceptionScoped() {",
+              "\thub := sentry.CurrentHub().Clone()"
             ],
             "in_app": true
           }

@@ -1,11 +1,11 @@
 {
-  "event_id": "690e2ef342054a7591c5877852aaa0f2",
-  "sent_at": "2026-01-03T12:17:33.467564Z",
+  "event_id": "a973392a9226446ea99abebe8b30499c",
+  "sent_at": "2026-02-27T21:26:57.418052Z",
   "trace": {
     "trace_id": "noop_trace_id",
     "environment": "production",
     "release": "test",
-    "public_key": "username"
+    "public_key": "projectuser"
   }
 }
 {
@@ -16,8 +16,8 @@
 {
   "message": "test message",
   "level": "fatal",
-  "event_id": "690e2ef342054a7591c5877852aaa0f2",
-  "timestamp": "2026-01-03T12:17:33.464630Z",
+  "event_id": "a973392a9226446ea99abebe8b30499c",
+  "timestamp": "2026-02-27T21:26:57.415087Z",
   "contexts": {
     "trace": {
       "trace_id": "noop_trace_id",
@@ -38,7 +38,7 @@
         "level": "info",
         "category": "__main__",
         "message": "info message with arg: (42, 'string argument')",
-        "timestamp": "2026-01-03T12:17:33.464212Z",
+        "timestamp": "2026-02-27T21:26:57.414675Z",
         "data": {}
       },
       {
@@ -46,7 +46,7 @@
         "level": "warning",
         "category": "__main__",
         "message": "warning message with extra",
-        "timestamp": "2026-01-03T12:17:33.464563Z",
+        "timestamp": "2026-02-27T21:26:57.415019Z",
         "data": {
           "extra_key": 42
         }

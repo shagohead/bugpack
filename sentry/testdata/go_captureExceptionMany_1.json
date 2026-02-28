@@ -1,20 +1,20 @@
 {
-  "event_id": "5690b37d53a2448e8c467fac59101251",
-  "sent_at": "2026-01-03T01:44:29.60147+03:00",
-  "dsn": "http://username@127.0.0.1:60181/1",
+  "event_id": "c6cd40c92dd5440a8563969f3b6342d0",
+  "sent_at": "2026-02-28T00:26:56.391176+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55456/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
 {
   "type": "event",
-  "length": 2325
+  "length": 2301
 }
 {
   "contexts": {
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "5690b37d53a2448e8c467fac59101251",
+  "event_id": "c6cd40c92dd5440a8563969f3b6342d0",
   "level": "error",
   "platform": "go",
   "sdk": {
@@ -76,8 +76,8 @@
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -98,8 +98,8 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 56,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 59,
             "pre_context": [
               "\tcase \"captureMessage\":",
               "\t\tcaptureMessage()",
@@ -120,8 +120,8 @@
           {
             "function": "captureExceptionMany",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 83,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 88,
             "pre_context": [
               "\tsentry.CaptureException(\u0026ManualError{Prop: 42})",
               "}",

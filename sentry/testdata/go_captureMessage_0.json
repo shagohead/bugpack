@@ -1,14 +1,14 @@
 {
-  "event_id": "444f7c0f69f545a4b6dc4965780c03fe",
-  "sent_at": "2026-01-03T01:44:29.493671+03:00",
-  "dsn": "http://username@127.0.0.1:60179/1",
+  "event_id": "052b48d47ac54e9e9d187fc69e341c69",
+  "sent_at": "2026-02-28T00:26:56.288767+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55454/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "444f7c0f69f545a4b6dc4965780c03fe",
+  "event_id": "052b48d47ac54e9e9d187fc69e341c69",
   "level": "info",
   "message": "manual text message",
   "platform": "go",

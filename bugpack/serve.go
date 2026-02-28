@@ -4,55 +4,43 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 
+	"github.com/ClickHouse/ch-go"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 
-	"github.com/ClickHouse/ch-go"
-	"github.com/ClickHouse/ch-go/chpool"
 	"github.com/shagohead/bugpack/bugpack/batcher"
 	"github.com/shagohead/bugpack/bugpack/batcher/chbuf"
 	"github.com/shagohead/bugpack/bugpack/config"
 	"github.com/shagohead/bugpack/bugpack/ingester"
 )
 
-func server(ctx context.Context, name string, args []string) error {
+func serve(ctx context.Context, name string, args []string) error {
+	var configPath string
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
-	cfile := fs.String("f", "", "Config file path")
+	fs.StringVar(&configPath, "f", "", "Config file path")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *cfile == "" {
+	if configPath == "" {
 		return errors.New("missing configuration file option value")
 	}
-	config, err := config.Load(*cfile)
+	config, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}
-	// TODO: Config otel resource.
+	// TODO: Config optional otel resource.
 	opts := ch.Options{
 		ClientName:                   "bugpack",
 		OpenTelemetryInstrumentation: true,
 		MeterProvider:                otel.GetMeterProvider(),
 		TracerProvider:               otel.GetTracerProvider(),
 	}
-	for key, val := range map[string]*string{
-		"CH_ADDRESS":  &(opts.Address),
-		"CH_DATABASE": &(opts.Database),
-		"CH_USER":     &(opts.User),
-		"CH_PASSWORD": &(opts.Password),
-	} {
-		*val = os.Getenv(key)
-		if *val == "" {
-			return fmt.Errorf("missing environment variable %s value", key)
-		}
-	}
-	chpool, err := chpool.New(ctx, chpool.Options{ClientOptions: opts})
+	chpool, err := newCHpool(ctx, &opts)
 	if err != nil {
 		return err
 	}
@@ -70,23 +58,36 @@ func server(ctx context.Context, name string, args []string) error {
 		server.Handler = http.StripPrefix(config.ListenPrefix, server.Handler)
 	}
 	server.Handler = otelhttp.NewHandler(
-		server.Handler, "IngestEnvelope",
+		server.Handler, "Ingest",
 		otelhttp.WithMessageEvents(
 			otelhttp.ReadEvents, otelhttp.WriteEvents,
 		),
 	)
+
+	batcherErr := make(chan error, 1)
+	go func() {
+		batcherErr <- batcher.Serve()
+	}()
+
 	go func() {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt)
 		<-sig
+		slog.InfoContext(ctx, "Shutdown")
 		if err := server.Shutdown(ctx); err != nil {
 			slog.ErrorContext(ctx, err.Error())
 		}
+		batcher.Shutdown()
 	}()
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		return err
+
+	slog.InfoContext(ctx, "Start listening", slog.String("addr", server.Addr))
+	if e := server.ListenAndServe(); e != http.ErrServerClosed {
+		err = errors.Join(err, e)
 	}
-	return nil
+	if e := <-batcherErr; e != nil {
+		err = errors.Join(err, e)
+	}
+	return err
 }
 
 type handler struct {

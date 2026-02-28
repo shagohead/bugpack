@@ -1,20 +1,20 @@
 {
-  "event_id": "b47d4e796b6a4b5d9d029ba485a611b4",
-  "sent_at": "2026-01-03T01:44:29.913776+03:00",
-  "dsn": "http://username@127.0.0.1:60187/1",
+  "event_id": "386886b4f0bf4d58a2817295e635feee",
+  "sent_at": "2026-02-28T00:26:56.695861+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55462/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
 {
   "type": "event",
-  "length": 2684
+  "length": 2687
 }
 {
   "contexts": {
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "b47d4e796b6a4b5d9d029ba485a611b4",
+  "event_id": "386886b4f0bf4d58a2817295e635feee",
   "level": "error",
   "platform": "go",
   "sdk": {
@@ -95,8 +95,8 @@
           {
             "function": "main",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 12,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 14,
             "pre_context": [
               "",
               "\t\"github.com/getsentry/sentry-go\"",
@@ -117,8 +117,8 @@
           {
             "function": "run",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 62,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 65,
             "pre_context": [
               "\tcase \"captureExceptionNested\":",
               "\t\tcaptureExceptionNested()",
@@ -128,19 +128,19 @@
             ],
             "context_line": "\t\tcaptureExceptionWrapped()",
             "post_context": [
+              "\tcase \"withRequest\":",
+              "\t\twithRequest()",
               "\tdefault:",
               "\t\treturn fmt.Errorf(\"unknown command argument %q\", os.Args[1])",
-              "\t}",
-              "\treturn nil",
-              "}"
+              "\t}"
             ],
             "in_app": true
           },
           {
             "function": "captureExceptionWrapped",
             "module": "main",
-            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/command/main.go",
-            "lineno": 125,
+            "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
+            "lineno": 128,
             "pre_context": [
               "}",
               "",

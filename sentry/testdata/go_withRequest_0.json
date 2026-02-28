@@ -1,14 +1,14 @@
 {
-  "event_id": "9977f71fac7440689948de578f6ef7b3",
-  "sent_at": "2026-01-03T02:28:04.725533+03:00",
-  "dsn": "http://username@127.0.0.1:50601/1",
+  "event_id": "ed7e23cee2dd4914affb40f5f19eb39b",
+  "sent_at": "2026-02-28T00:26:56.90026+03:00",
+  "dsn": "http://projectuser:projectpass@127.0.0.1:55467/prefix/0",
   "sdk": {
     "name": "sentry.go",
     "version": "0.35.1"
   },
   "trace": {
     "environment": "local",
-    "public_key": "username",
+    "public_key": "projectuser",
     "trace_id": "00000000000000000000000000000000"
   }
 }
@@ -38,7 +38,7 @@
     }
   },
   "environment": "local",
-  "event_id": "9977f71fac7440689948de578f6ef7b3",
+  "event_id": "ed7e23cee2dd4914affb40f5f19eb39b",
   "level": "error",
   "platform": "go",
   "sdk": {
@@ -138,7 +138,7 @@
             "function": "withRequest",
             "module": "main",
             "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
-            "lineno": 144,
+            "lineno": 142,
             "pre_context": [
               "\treturn fmt.Sprintf(\"ManualError Property: %d\", m.Prop)",
               "}",
@@ -160,7 +160,7 @@
             "function": "func1",
             "module": "main",
             "abs_path": "/Users/shagohead/src/github.com/shagohead/bugback/sentry/go/main.go",
-            "lineno": 151,
+            "lineno": 149,
             "pre_context": [
               "\t\treq.Header.Set(\"X-Key\", \"x-value\")",
               "\t\treq.Header.Set(\"Origin\", \"test code\")",

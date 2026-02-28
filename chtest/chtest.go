@@ -13,7 +13,7 @@ import (
 	"github.com/ClickHouse/ch-go"
 )
 
-func Database(t *testing.T, name string) *ch.Client {
+func Database(t testing.TB, name string) *ch.Client {
 	t.Helper()
 	ctx := context.Background()
 	once.Do(func() {
@@ -66,7 +66,7 @@ func Database(t *testing.T, name string) *ch.Client {
 	return dial(t, ctx, name)
 }
 
-func dial(t *testing.T, ctx context.Context, db string) *ch.Client {
+func dial(t testing.TB, ctx context.Context, db string) *ch.Client {
 	conn, err := ch.Dial(ctx, ch.Options{Address: addr, Database: db, Password: "default"})
 	if err != nil {
 		t.Fatal("dial database:", err)

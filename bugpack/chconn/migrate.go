@@ -22,7 +22,11 @@ const migrationsTable = `CREATE TABLE IF NOT EXISTS migrations (
 ENGINE = MergeTree
 ORDER BY (Name);`
 
-func Migrate(ctx context.Context, conn *ch.Client) error {
+type Conn interface {
+	Do(context.Context, ch.Query) error
+}
+
+func Migrate(ctx context.Context, conn Conn) error {
 	dir := "migrations"
 	dirs, err := migrations.ReadDir(dir)
 	if err != nil {
@@ -55,7 +59,7 @@ func Migrate(ctx context.Context, conn *ch.Client) error {
 	return nil
 }
 
-func Applied(ctx context.Context, conn *ch.Client) ([]string, error) {
+func Applied(ctx context.Context, conn Conn) ([]string, error) {
 	var saved []string
 	var name proto.ColStr
 	if err := conn.Do(ctx, ch.Query{
@@ -73,7 +77,7 @@ func Applied(ctx context.Context, conn *ch.Client) ([]string, error) {
 	return saved, nil
 }
 
-func save(ctx context.Context, conn *ch.Client, name string) error {
+func save(ctx context.Context, conn Conn, name string) error {
 	var v proto.ColStr
 	v.Append(name)
 	return conn.Do(ctx, ch.Query{
@@ -82,7 +86,7 @@ func save(ctx context.Context, conn *ch.Client, name string) error {
 	})
 }
 
-func migrate(ctx context.Context, conn *ch.Client, name string) error {
+func migrate(ctx context.Context, conn Conn, name string) error {
 	b, err := migrations.ReadFile(name)
 	if err != nil {
 		return err

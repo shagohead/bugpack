@@ -98,8 +98,6 @@ func captureExceptionNestedChild() {
 	}()
 }
 
-// TODO: Научиться аттачить скоуп/ивент к трейсу open-telemetry.
-
 func captureExceptionScoped() {
 	hub := sentry.CurrentHub().Clone()
 	hub.WithScope(func(scope *sentry.Scope) {

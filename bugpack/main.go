@@ -23,11 +23,13 @@ func run(ctx context.Context) error {
 	var cmd func(context.Context, string, []string) error
 	switch flag.Arg(0) {
 	case "server":
-		cmd = server
+		cmd = serve
+	case "migrate":
+		cmd = migrate
 	case "":
 		return fmt.Errorf("missing command argument")
 	default:
 		return fmt.Errorf("unknown command %s", flag.Arg(0))
 	}
-	return cmd(ctx, flag.Arg(0), flag.Args())
+	return cmd(ctx, flag.Arg(0), flag.Args()[1:])
 }
