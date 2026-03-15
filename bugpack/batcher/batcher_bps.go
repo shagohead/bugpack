@@ -24,10 +24,7 @@ func main() {
 	flag.BoolVar(&details, "d", false, "Print detailed counters from senders")
 	flag.Parse()
 
-	batcher := batcher.New(func() batcher.Buffer {
-		b := make(arrbuffer, 0, capacity)
-		return &b
-	}, batcher.DefaultConfig)
+	batcher := batcher.New(&bufferer{capacity: capacity}, batcher.DefaultConfig)
 	go func() {
 		batcher.Serve()
 	}()
@@ -64,12 +61,34 @@ func main() {
 	fmt.Printf("Measured Batch calls: %v/%v\n", total, duration)
 }
 
+type bufferer struct {
+	capacity int
+}
+
+// Buffer implements batcher.Bufferer.
+func (b *bufferer) Buffer() batcher.Buffer[*envelope.Envelope] {
+	buf := make(arrbuffer, 0, b.capacity)
+	return &buf
+}
+
+// Envelope implements batcher.Bufferer.
+func (b *bufferer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
+}
+
+var _ batcher.Bufferer[*envelope.Envelope] = (*bufferer)(nil)
+
 type arrbuffer []*envelope.Envelope
 
 // Append implements Buffer.
 func (a *arrbuffer) Append(e *envelope.Envelope) bool {
 	*a = append(*a, e)
 	return len(*a) == cap(*a)
+}
+
+// Envelope implements Buffer.
+func (b *arrbuffer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
 }
 
 // Empty implements Buffer.

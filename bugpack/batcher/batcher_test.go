@@ -44,6 +44,11 @@ func (b *buffer) Append(e *envelope.Envelope) bool {
 	return b.len == b.cap
 }
 
+// Envelope implements Buffer.
+func (b *buffer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
+}
+
 // Empty implements Buffer.
 func (b *buffer) Empty() bool {
 	return b.len == 0
@@ -71,11 +76,28 @@ func (b *buffer) Flush(ctx context.Context) error {
 	return fsh.e
 }
 
-func factory(len, cap int, act chan action, fsh chan flush) func() Buffer {
-	return func() Buffer {
-		return &buffer{len: len, cap: cap, act: act, fsh: fsh}
-	}
+func factory(len, cap int, act chan action, fsh chan flush) Bufferer[*envelope.Envelope] {
+	return &bufferer{len: len, cap: cap, act: act, fsh: fsh}
 }
+
+type bufferer struct {
+	len int
+	cap int
+	act chan action
+	fsh chan flush
+}
+
+// Buffer implements Bufferer.
+func (b *bufferer) Buffer() Buffer[*envelope.Envelope] {
+	return &buffer{len: b.len, cap: b.cap, act: b.act, fsh: b.fsh}
+}
+
+// Envelope implements Bufferer.
+func (b *bufferer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
+}
+
+var _ Bufferer[*envelope.Envelope] = (*bufferer)(nil)
 
 func TestBatcher(t *testing.T) {
 	minuteRetry := ConfigBackoff{
@@ -243,12 +265,8 @@ func TestPoolBufferReuse(t *testing.T) {
 				}
 			}
 		}()
-		f := func() Buffer {
-			n <- struct{}{}
-			return &buffer{cap: 1, act: a} // cap 1: one buffer fully fills by one event.
-		}
 		// Only one flushing worker for test simplicity.
-		b := New(f, Config{FlushWorkers: 1, BatchTimeout: time.Second})
+		b := New(factory(0, 1, a, nil), Config{FlushWorkers: 1, BatchTimeout: time.Second})
 		go b.Serve()
 		c := 20 // Sended events count.
 		for range c {
@@ -279,10 +297,7 @@ func strerrs(got, want error) (string, string) {
 }
 
 func BenchmarkBatcher(b *testing.B) {
-	batcher := New(func() Buffer {
-		b := make(arrbuffer, 0, 1000)
-		return &b
-	}, DefaultConfig)
+	batcher := New(&arrbufferer{}, DefaultConfig)
 	go func() {
 		batcher.Serve()
 	}()
@@ -292,12 +307,32 @@ func BenchmarkBatcher(b *testing.B) {
 	}
 }
 
+type arrbufferer struct{}
+
+// Buffer implements Bufferer.
+func (a *arrbufferer) Buffer() Buffer[*envelope.Envelope] {
+	b := make(arrbuffer, 0, 1000)
+	return &b
+}
+
+// Envelope implements Bufferer.
+func (a *arrbufferer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
+}
+
+var _ Bufferer[*envelope.Envelope] = (*arrbufferer)(nil)
+
 type arrbuffer []*envelope.Envelope
 
 // Append implements Buffer.
 func (a *arrbuffer) Append(e *envelope.Envelope) bool {
 	*a = append(*a, e)
 	return len(*a) == cap(*a)
+}
+
+// Envelope implements Buffer.
+func (b *arrbuffer) Envelope(e *envelope.Envelope) *envelope.Envelope {
+	return e
 }
 
 // Empty implements Buffer.

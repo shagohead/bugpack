@@ -15,8 +15,8 @@ import (
 	"github.com/shagohead/bugpack/bugpack/envelope"
 )
 
-func New(projects ProjectResolver, batcher batcher.Batcher) http.Handler {
-	return &handler{projects: projects, batcher: batcher}
+func New[E any](projects ProjectResolver, batcher batcher.Batcher[E]) http.Handler {
+	return &handler[E]{projects: projects, batcher: batcher}
 }
 
 type ProjectResolver interface {
@@ -28,13 +28,13 @@ type Project interface {
 	Name() string
 }
 
-type handler struct {
+type handler[E any] struct {
 	projects ProjectResolver
-	batcher  batcher.Batcher
+	batcher  batcher.Batcher[E]
 }
 
 // ServeHTTP implements http.Handler.
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *handler[E]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "invalid method", http.StatusMethodNotAllowed)
 		return

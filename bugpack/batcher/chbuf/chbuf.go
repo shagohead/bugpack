@@ -11,10 +11,37 @@ import (
 	"github.com/shagohead/bugpack/bugpack/envelope"
 )
 
-func Factory(conn Conn) func() batcher.Buffer {
-	return func() batcher.Buffer {
-		return &buffer{con: conn, val: makeValues()}
+func Bufferer(conn Conn) batcher.Bufferer[*Envelope] {
+	return &bufferer{conn: conn}
+}
+
+type bufferer struct {
+	conn Conn
+}
+
+// Buffer implements batcher.Bufferer.
+func (b *bufferer) Buffer() batcher.Buffer[*Envelope] {
+	return &buffer{con: b.conn, val: makeValues()}
+}
+
+// Envelope implements batcher.Bufferer.
+func (b *bufferer) Envelope(e *envelope.Envelope) *Envelope {
+	d := &Envelope{Envelope: e}
+	d.calcHash()
+	d.ctxjson, _ = json.Marshal(e.Contexts)
+	if d.ctxjson == nil {
+		d.ctxjson = emptyBytesObj
 	}
+	return d
+}
+
+var _ batcher.Bufferer[*Envelope] = (*bufferer)(nil)
+
+type Envelope struct {
+	*envelope.Envelope
+	msgHash uint64
+	excHash []uint64
+	ctxjson []byte
 }
 
 type Conn interface {
@@ -26,20 +53,40 @@ type buffer struct {
 	val *values
 }
 
-const limit = 1000
-
 // Append implements batcher.Buffer.
-func (b *buffer) Append(e *envelope.Envelope) bool {
+func (b *buffer) Append(e *Envelope) bool {
 	b.val.append(e)
 	return b.val.timestamp.Rows() >= limit
 }
+
+const limit = 1000
 
 // Empty implements batcher.Buffer.
 func (b *buffer) Empty() bool {
 	return b.val.timestamp.Rows() == 0
 }
 
-const query = `INSERT INTO issue_event VALUES`
+const query = `INSERT INTO issue_event (
+	Project,
+	IssueHash,
+	Level,
+	Message,
+	Exception,
+	ClientIP,
+	SDK,
+	Platform,
+	ServerName,
+	Environment,
+	Release,
+	User,
+	UserData,
+	Context,
+	Tags,
+	Request,
+	TraceID,
+	SpanID,
+	Timestamp
+) VALUES`
 
 // Flush implements batcher.Buffer.
 func (b *buffer) Flush(ctx context.Context) error {
@@ -56,13 +103,14 @@ func (b *buffer) Flush(ctx context.Context) error {
 func makeValues() *values {
 	v := &values{
 		project:      new(proto.ColStr).LowCardinality(),
+		hash:         new(proto.ColUInt64),
 		level:        new(proto.ColStr).LowCardinality(),
 		message:      new(proto.ColStr),
+		excParent:    new(proto.ColUInt64),
 		excModule:    new(proto.ColStr),
 		excType:      new(proto.ColStr),
 		excValue:     new(proto.ColStr),
 		excFrames:    proto.NewArray(newColFrame()),
-		parents:      proto.NewArray(newColParent()),
 		clientip:     new(proto.ColStr),
 		sdkName:      new(proto.ColStr).LowCardinality(),
 		sdkVersion:   new(proto.ColStr).LowCardinality(),
@@ -91,15 +139,16 @@ func makeValues() *values {
 	}
 	v.input = proto.Input{
 		{Name: "Project", Data: v.project},
+		{Name: "IssueHash", Data: v.hash},
 		{Name: "Level", Data: v.level},
 		{Name: "Message", Data: v.message},
 		{Name: "Exception", Data: proto.ColTuple{
+			proto.Named(v.excParent, "ParentHash"),
 			proto.Named(v.excModule, "Module"),
 			proto.Named(v.excType, "Type"),
 			proto.Named(v.excValue, "Value"),
 			proto.Named(v.excFrames, "Frames"),
 		}},
-		{Name: "Parents", Data: v.parents},
 		{Name: "ClientIP", Data: v.clientip},
 		{Name: "SDK", Data: proto.ColTuple{
 			proto.Named(v.sdkName, "Name"),
@@ -138,13 +187,14 @@ func makeValues() *values {
 type values struct {
 	input        proto.Input
 	project      *proto.ColLowCardinality[string]
+	hash         *proto.ColUInt64
 	level        *proto.ColLowCardinality[string]
 	message      *proto.ColStr
+	excParent    *proto.ColUInt64
 	excModule    *proto.ColStr
 	excType      *proto.ColStr
 	excValue     *proto.ColStr
 	excFrames    *proto.ColArr[envelope.Frame]
-	parents      *proto.ColArr[parent]
 	clientip     *proto.ColStr
 	sdkName      *proto.ColLowCardinality[string]
 	sdkVersion   *proto.ColLowCardinality[string]
@@ -172,16 +222,16 @@ type values struct {
 	timestamp    *proto.ColDateTime64
 }
 
-func (v *values) append(e *envelope.Envelope) {
+func (v *values) append(e *Envelope) {
 	if e.Message != "" {
 		v.appendMessage(e)
 	}
-	for _, exc := range e.Exception {
-		v.appendException(e, &exc)
+	for i := range e.Exception {
+		v.appendException(e, i)
 	}
 }
 
-func (v *values) appendBase(e *envelope.Envelope) {
+func (v *values) appendBase(e *Envelope) {
 	v.project.Append(e.Project)
 	v.level.Append(e.Level)
 	v.clientip.Append(e.ClientIP)
@@ -191,16 +241,16 @@ func (v *values) appendBase(e *envelope.Envelope) {
 	v.serverName.Append(e.ServerName)
 	v.environment.Append(e.Environment)
 	v.release.Append(e.Release)
+	v.context.Append(e.ctxjson)
 	v.tags.Append(e.Tags)
 	v.trace.Append(e.TraceID)
 	v.span.Append(e.SpanID)
 	v.timestamp.Append(e.Timestamp)
 	v.appendUser(e)
-	v.appendContext(e)
 	v.appendRequest(e)
 }
 
-func (v *values) appendRequest(e *envelope.Envelope) {
+func (v *values) appendRequest(e *Envelope) {
 	if e.Request == nil {
 		v.reqURL.Append(emptyStr)
 		v.reqMethod.Append(emptyStr)
@@ -220,7 +270,7 @@ func (v *values) appendRequest(e *envelope.Envelope) {
 	v.reqEnviron.Append(e.Request.Environ)
 }
 
-func (v *values) appendUser(e *envelope.Envelope) {
+func (v *values) appendUser(e *Envelope) {
 	for key, dst := range map[string]*proto.ColStr{
 		"id":         v.userID,
 		"ip_address": v.userIP,
@@ -244,39 +294,29 @@ func (v *values) appendUser(e *envelope.Envelope) {
 	v.userData.Append(data)
 }
 
-func (v *values) appendContext(e *envelope.Envelope) {
-	data, _ := json.Marshal(e.Contexts)
-	if data == nil {
-		data = emptyBytesObj
-	}
-	v.context.Append(data)
-}
-
 var emptyBytesObj = []byte(`{}`)
 
 const emptyStr = ""
 
-func (v *values) appendMessage(e *envelope.Envelope) {
+func (v *values) appendMessage(e *Envelope) {
 	v.appendBase(e)
+	v.hash.Append(e.msgHash)
 	v.message.Append(e.Message)
 	v.excModule.Append(emptyStr)
 	v.excType.Append(emptyStr)
 	v.excValue.Append(emptyStr)
 	v.excFrames.Append(nil)
-	v.parents.Append(nil)
+	v.excParent.Append(0)
 }
 
-func (v *values) appendException(e *envelope.Envelope, exc *envelope.Exception) {
+func (v *values) appendException(e *Envelope, i int) {
 	v.appendBase(e)
+	v.hash.Append(e.excHash[i])
 	v.message.Append(emptyStr)
-	v.excModule.Append(exc.Module)
-	v.excType.Append(exc.Type)
-	v.excValue.Append(exc.Value)
-	v.excFrames.Append(exc.Frames)
-	var parents []parent
-	if exc.Mechanism.Parent >= 1 {
-		// TODO: Make parents.
-		// parents = append(parents, parent{})
-	}
-	v.parents.Append(parents)
+	x := e.Exception[i]
+	v.excModule.Append(x.Module)
+	v.excType.Append(x.Type)
+	v.excValue.Append(x.Value)
+	v.excFrames.Append(x.Frames)
+	v.excParent.Append(e.parentHash(&x))
 }

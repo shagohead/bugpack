@@ -29,7 +29,7 @@ func Database(t testing.TB, name string) *ch.Client {
 		addr, err = containerAddr(docker)
 		if err != nil {
 			if err := exec.Command(
-				docker, "run", "-p", "9000", "-d", "--rm", "--name", containerName,
+				docker, "run", "-d", "--rm", "-p", containerPort, "--name", containerName,
 				"-e", "CLICKHOUSE_PASSWORD=default", "--ulimit", "nofile=262144:262144",
 				"clickhouse/clickhouse-server:25.7-alpine",
 			).Run(); err != nil {
@@ -59,6 +59,9 @@ func Database(t testing.TB, name string) *ch.Client {
 		t.Fatalf("create database %s: %v", name, err)
 	}
 	t.Cleanup(func() {
+		if os.Getenv("CHTEST_SAVE") != "" {
+			return
+		}
 		if err := client.Do(ctx, ch.Query{Body: fmt.Sprintf("DROP DATABASE %s", name)}); err != nil {
 			t.Fatalf("drop database %s: %v", name, err)
 		}
@@ -80,10 +83,13 @@ var (
 	client *ch.Client
 )
 
-const containerName = "bugpack-ch"
+const (
+	containerName = "bugpack-ch"
+	containerPort = "9000"
+)
 
 func containerAddr(docker string) (string, error) {
-	out, err := exec.Command(docker, "port", containerName, "9000").Output()
+	out, err := exec.Command(docker, "port", containerName, containerPort).Output()
 	if err != nil {
 		return "", err
 	}

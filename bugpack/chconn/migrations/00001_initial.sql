@@ -13,9 +13,11 @@ TTL toDateTime(Writed) + toIntervalDay(30);
 CREATE TABLE IF NOT EXISTS issue_event
 (
 	`Project` LowCardinality(String) CODEC(ZSTD(1)),
+	`IssueHash` UInt64 DEFAULT xxh3(Level, Message, Exception) CODEC(ZSTD(1)),
 	`Level` LowCardinality(String) CODEC(ZSTD(1)),
 	`Message` String CODEC(ZSTD(1)),
 	`Exception` Tuple(
+		ParentHash UInt64,
 		Module String,
 		Type String,
 		Value String,
@@ -32,8 +34,6 @@ CREATE TABLE IF NOT EXISTS issue_event
 			InApp Bool
 		))
 	) CODEC(ZSTD(1)),
-	`Parents` Array(Tuple(Type String, Value String)) CODEC(ZSTD(1)),
-	`IssueHash` UInt64 DEFAULT xxh3(Level, Message, Exception, Parents) CODEC(ZSTD(1)),
 	`ClientIP` String CODEC(ZSTD(1)),
 	`SDK` Tuple(Name LowCardinality(String), Version LowCardinality(String)) CODEC(ZSTD(1)),
 	`Platform` LowCardinality(String) CODEC(ZSTD(1)),
@@ -64,7 +64,8 @@ CREATE TABLE IF NOT EXISTS issue_event
 )
 ENGINE = MergeTree
 PARTITION BY (toDate(Timestamp), Project)
-ORDER BY (Project, Timestamp)
+PRIMARY KEY (Project, toDate(Timestamp))
+ORDER BY (Project, toDate(Timestamp), Timestamp)
 TTL toDateTime(Timestamp) + toIntervalDay(15)
 SETTINGS ttl_only_drop_parts = 1;
 

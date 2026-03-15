@@ -17,7 +17,7 @@ import (
 )
 
 // Batcher accumulates events in buffer, which will be enqueued for flushing into DBMS.
-type Batcher interface {
+type Batcher[E any] interface {
 	// Batch the event. Safe for concurrent use.
 	Batch(e *envelope.Envelope)
 
@@ -28,9 +28,18 @@ type Batcher interface {
 	Shutdown()
 }
 
-type Buffer interface {
+// Bufferer provides buffers and Envelope preprocessing for them.
+type Bufferer[E any] interface {
+	// Envelope returns wrapped *Envelope with preprocessing in request handler goroutine.
+	Envelope(*envelope.Envelope) E
+
+	// Buffer allocates memory for batching.
+	Buffer() Buffer[E]
+}
+
+type Buffer[E any] interface {
 	// Append event into buffer. Should return true if buffer is full.
-	Append(*envelope.Envelope) bool
+	Append(E) bool
 
 	// Flush buffer into DBMS and reset it's underlying resources for reuse.
 	// This method should concern about context lifetime.
@@ -70,7 +79,7 @@ type ConfigBackoff struct {
 	MaxInterval         time.Duration `yaml:"max_interval"`
 }
 
-func New(factory func() Buffer, config Config) Batcher {
+func New[E any](bufferer Bufferer[E], config Config) Batcher[E] {
 	if config.BatchTimeout == 0 || config.FlushWorkers == 0 {
 		panic("BatchTimeout and FlushWorkers cannot be zero")
 	}
@@ -80,12 +89,13 @@ func New(factory func() Buffer, config Config) Batcher {
 		config.FlushContext = context.WithoutCancel(config.FlushContext)
 	}
 	ctx, cancel := context.WithCancel(config.FlushContext)
-	return &batcher{
+	return &batcher[E]{
 		conf:      config,
-		pool:      &sync.Pool{New: func() any { return factory() }},
+		bufs:      bufferer,
+		pool:      &sync.Pool{New: func() any { return bufferer.Buffer() }},
 		done:      make(chan struct{}),
-		events:    make(chan *envelope.Envelope),
-		toflash:   make(chan Buffer),
+		events:    make(chan E),
+		toflash:   make(chan Buffer[E]),
 		tracer:    otel.GetTracerProvider().Tracer("bugpack/batcher"),
 		ctxflash:  ctx,
 		stopflash: cancel,
@@ -93,28 +103,29 @@ func New(factory func() Buffer, config Config) Batcher {
 }
 
 // batcher accumulates events into buffers, which then will be routed into flushing workers.
-type batcher struct {
+type batcher[E any] struct {
 	conf      Config
+	bufs      Bufferer[E]
 	pool      *sync.Pool
 	done      chan struct{}
-	events    chan *envelope.Envelope
-	toflash   chan Buffer     // Transmitter from receiver to workers. Closed with receiver.
+	events    chan E
+	toflash   chan Buffer[E]  // Transmitter from receiver to workers. Closed with receiver.
 	ctxflash  context.Context // Flushing context. Canceled after first worker error.
 	stopflash func()
 	tracer    trace.Tracer
 }
 
 // Batch implements Batcher.
-func (b *batcher) Batch(e *envelope.Envelope) {
+func (b *batcher[E]) Batch(e *envelope.Envelope) {
 	select {
-	case b.events <- e:
+	case b.events <- b.bufs.Envelope(e):
 	case <-b.done:
 	case <-b.ctxflash.Done():
 	}
 }
 
 // Serve implements Batcher.
-func (b *batcher) Serve() error {
+func (b *batcher[E]) Serve() error {
 	var wg, cg sync.WaitGroup
 	errs := make(chan error, 1) // Collect first error from workers.
 
@@ -153,12 +164,12 @@ func (b *batcher) Serve() error {
 }
 
 // Shutdown implements Batcher.
-func (b *batcher) Shutdown() {
+func (b *batcher[E]) Shutdown() {
 	close(b.done)
 }
 
-func (b *batcher) receive() {
-	c := b.pool.Get().(Buffer)
+func (b *batcher[E]) receive() {
+	c := b.pool.Get().(Buffer[E])
 	t := time.NewTimer(b.conf.BatchTimeout)
 	defer func() {
 		close(b.toflash)
@@ -183,7 +194,7 @@ func (b *batcher) receive() {
 		}
 		select {
 		case b.toflash <- c:
-			c = b.pool.Get().(Buffer)
+			c = b.pool.Get().(Buffer[E])
 		case <-b.ctxflash.Done():
 			return
 		}
@@ -199,7 +210,7 @@ const (
 
 // flush buffer into DBMS.
 // On error, if retrying enabled, will do it with exponential backoffs.
-func (b *batcher) flush(ctx context.Context, buf Buffer) (err error) {
+func (b *batcher[E]) flush(ctx context.Context, buf Buffer[E]) (err error) {
 	ctx, span := b.tracer.Start(ctx, "batcher.flush")
 	defer func() {
 		if err != nil {

@@ -32,7 +32,7 @@ type Event struct {
 	Level       string
 	Contexts    map[string]any
 	Extra       map[string]any
-	User        map[string]any
+	User        map[string]any // TODO: Decode user into struct {id, ip, email, username, data}.
 	Tags        map[string]string
 	EventID     string
 	TraceID     string

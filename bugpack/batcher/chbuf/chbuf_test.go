@@ -15,7 +15,8 @@ import (
 
 func TestFlush(t *testing.T) {
 	conn := chmigrated.Database(t, "chbuf_flush")
-	buf := Factory(conn)()
+	bufferer := Bufferer(conn)
+	buf := bufferer.Buffer()
 
 	event := func(t *testing.T) *envelope.Envelope {
 		return &envelope.Envelope{
@@ -42,7 +43,7 @@ func TestFlush(t *testing.T) {
 	t.Run("message", func(t *testing.T) {
 		event := event(t)
 		event.Message = "testing message event"
-		buf.Append(event)
+		buf.Append(bufferer.Envelope(event))
 		if err := buf.Flush(t.Context()); err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +61,7 @@ func TestFlush(t *testing.T) {
 			Headers:     map[string]string{"Referer": "https://github.com/shagohead"},
 			Environ:     map[string]string{"host": "local"},
 		}
-		buf.Append(event)
+		buf.Append(bufferer.Envelope(event))
 		if err := buf.Flush(t.Context()); err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +106,7 @@ func TestFlush(t *testing.T) {
 				},
 			},
 		})
-		buf.Append(event)
+		buf.Append(bufferer.Envelope(event))
 		if err := buf.Flush(t.Context()); err != nil {
 			t.Fatal(err)
 		}
@@ -131,7 +132,7 @@ func TestFlush(t *testing.T) {
 				ID: 3, Parent: 2, Group: true,
 			},
 		})
-		buf.Append(event)
+		buf.Append(bufferer.Envelope(event))
 		if err := buf.Flush(t.Context()); err != nil {
 			t.Fatal(err)
 		}
@@ -153,26 +154,4 @@ func TestFlush(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-}
-
-/*
-Need to choose one of strategies:
-
-- Factory: make(proto.Input)
-	Append: []*Envelope => proto.Input
-	Flush: proto.Input.Reset().
-
-- Factory: make(proto.Input)
-	Append: Batch(Decode([]byte)) => proto.Input
-	Flush: proto.Input.Reset().
-*/
-
-func BenchmarkAppend(b *testing.B) {
-	for b.Loop() {
-	}
-}
-
-func BenchmarkFlush(b *testing.B) {
-	for b.Loop() {
-	}
 }

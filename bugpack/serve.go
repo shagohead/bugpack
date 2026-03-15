@@ -44,11 +44,10 @@ func serve(ctx context.Context, name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	factory := chbuf.Factory(chpool)
-	batcher := batcher.New(factory, config.Batcher)
+	batcher := batcher.New(chbuf.Bufferer(chpool), config.Batcher)
 	handler := &handler{
 		healthPath: config.HealthPath,
-		apiHandler: ingester.New(config, batcher),
+		apiHandler: ingester.New[*chbuf.Envelope](config, batcher),
 	}
 	server := &http.Server{
 		Addr:    config.ServerAddr,
@@ -77,13 +76,13 @@ func serve(ctx context.Context, name string, args []string) error {
 		if err := server.Shutdown(ctx); err != nil {
 			slog.ErrorContext(ctx, err.Error())
 		}
-		batcher.Shutdown()
 	}()
 
 	slog.InfoContext(ctx, "Start listening", slog.String("addr", server.Addr))
 	if e := server.ListenAndServe(); e != http.ErrServerClosed {
 		err = errors.Join(err, e)
 	}
+	batcher.Shutdown()
 	if e := <-batcherErr; e != nil {
 		err = errors.Join(err, e)
 	}
