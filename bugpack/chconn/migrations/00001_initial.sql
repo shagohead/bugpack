@@ -69,13 +69,12 @@ ORDER BY (Project, toDate(Timestamp), Timestamp)
 TTL toDateTime(Timestamp) + toIntervalDay(15)
 SETTINGS ttl_only_drop_parts = 1;
 
--- NOTE: Возможно стоит добавить какую-то информацию для определения хранимой ошибки? Тогда можно будет и TTL увеличить.
 CREATE TABLE IF NOT EXISTS issue_stat
 (
 	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
-	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
-	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
+	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta, ZSTD(1)),
+	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta, ZSTD(1)),
 	`Count` SimpleAggregateFunction(sum, UInt64) CODEC(ZSTD(1)),
 )
 ENGINE = AggregatingMergeTree
@@ -105,8 +104,8 @@ CREATE TABLE IF NOT EXISTS issue_client
 	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`ClientIP` String CODEC(ZSTD(1)),
-	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
-	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
+	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta, ZSTD(1)),
+	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta, ZSTD(1)),
 	`Count` SimpleAggregateFunction(sum, UInt64) CODEC(ZSTD(1))
 )
 ENGINE = AggregatingMergeTree
@@ -138,8 +137,8 @@ CREATE TABLE IF NOT EXISTS issue_user
 	`Project` LowCardinality(String) CODEC(ZSTD(1)),
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`User` Tuple(ID String, IP String, Email String, Username String, Name String) CODEC(ZSTD(1)),
-	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
-	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
+	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta, ZSTD(1)),
+	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta, ZSTD(1)),
 	`Count` SimpleAggregateFunction(sum, UInt64) CODEC(ZSTD(1))
 )
 ENGINE = AggregatingMergeTree
@@ -172,8 +171,8 @@ CREATE TABLE IF NOT EXISTS issue_tag
 	`IssueHash` UInt64 CODEC(ZSTD(1)),
 	`Key` String CODEC(ZSTD(1)),
 	`Value` String CODEC(ZSTD(1)),
-	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
-	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta(4), ZSTD(1)),
+	`FirstSeen` SimpleAggregateFunction(min, DateTime64(6)) CODEC(Delta, ZSTD(1)),
+	`LastSeen` SimpleAggregateFunction(max, DateTime64(6)) CODEC(Delta, ZSTD(1)),
 	`Count` SimpleAggregateFunction(sum, UInt64) CODEC(ZSTD(1))
 )
 ENGINE = AggregatingMergeTree
