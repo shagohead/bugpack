@@ -1,6 +1,7 @@
 package envelope
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -56,10 +57,14 @@ func TestDecode(t *testing.T) {
 	t.Run("session", func(t *testing.T) {
 		e := new(Envelope)
 		d.ResetBytes(envelopeSession)
-		if err := e.Decode(d); err != nil {
+		err := e.Decode(d)
+		t.Logf("decoded envelope: %+v", *e)
+		if err == nil {
+			t.Fatal("non event decoding should return error")
+		}
+		if !errors.Is(err, ErrNonEventType) {
 			t.Fatal(err)
 		}
-		t.Logf("decoded envelope: %+v", *e)
 	})
 }
 

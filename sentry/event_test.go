@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -77,6 +78,7 @@ func TestIntegration(t *testing.T) {
 	// Platform-related subtest.
 	type call struct {
 		args []string
+		none []bool // Expects Err[NonE]ventType for some of received data.
 	}
 
 	dec := jx.GetDecoder()
@@ -119,7 +121,7 @@ func TestIntegration(t *testing.T) {
 				{args: []string{"with_breadcrumbs"}},
 				{args: []string{"raise_new_during_except"}},
 				{args: []string{"raise_same_during_except"}},
-				{args: []string{"raise_same_during_capture"}},
+				{args: []string{"raise_same_during_capture"}, none: []bool{false, true}},
 			},
 		},
 	} {
@@ -170,12 +172,12 @@ func TestIntegration(t *testing.T) {
 							}
 							end += start + 2
 							if err = json.Indent(&o, b[start:end], "", "  "); err != nil {
-								t.Fatalf("indent [%d:%d] = %v", start, end, err)
+								t.Fatalf("%v[%v]: indent [%d:%d] = %v", call.args, i, start, end, err)
 							}
 							start = end
 						}
 						if _, err = o.WriteTo(file); err != nil {
-							t.Fatal(err)
+							t.Fatalf("%v[%v]: WriteTo(%s): %v", call.args, i, name, err)
 						}
 					} else {
 						if logRequest {
@@ -185,8 +187,20 @@ func TestIntegration(t *testing.T) {
 
 					dec.ResetBytes(b)
 					env := new(envelope.Envelope)
-					if err = env.Decode(dec); err != nil {
-						t.Fatal(err)
+					err = env.Decode(dec)
+					var none bool
+					if call.none != nil {
+						none = call.none[i]
+					}
+					if err != nil {
+						if !errors.Is(err, envelope.ErrNonEventType) {
+							t.Fatalf("%v[%v]: %v", call.args, i, err)
+						}
+						if !none {
+							t.Fatalf("%v[%v]: got unexpected envelope.ErrNonEventType", call.args, i)
+						}
+					} else if none {
+						t.Fatalf("%v[%v]: missing expected envelope.ErrNonEventType", call.args, i)
 					}
 				}
 			})

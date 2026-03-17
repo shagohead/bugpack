@@ -61,6 +61,7 @@ type fieldValue struct {
 func (e *Envelope) exceptionFields(x *envelope.Exception) iter.Seq2[hashField, any] {
 	return func(yield func(hashField, any) bool) {
 		for _, s := range []fieldValue{
+			{f: fieldLevel, v: e.Level},
 			{f: fieldExcParent, v: e.parentHash(x)},
 			{f: fieldExcModule, v: x.Module},
 			{f: fieldExcType, v: x.Type},
@@ -101,12 +102,13 @@ func (e *Envelope) exceptionFields(x *envelope.Exception) iter.Seq2[hashField, a
 
 func (e *Envelope) calcHash() {
 	buf := make([]byte, 16)
-	if len(e.Message) != 0 || len(e.Level) != 0 {
+	if len(e.Message) != 0 {
 		e.msgHash = hashTuple(buf, e.messageFields())
 	}
 	if len(e.Exception) != 0 {
 		e.excHash = make([]uint64, len(e.Exception))
 		slices.SortFunc(e.Exception, func(a, b envelope.Exception) int {
+			// FIXME: Ordering is not determined when ID is missing or equals.
 			return a.Mechanism.ID - b.Mechanism.ID
 		})
 		for i, x := range e.Exception {
@@ -144,7 +146,11 @@ func hashFieldValue(b []byte, f hashField, v any) uint64 {
 func hashValue(v any) uint64 {
 	var b []byte
 	switch t := v.(type) {
-	case uint64, int, bool:
+	case uint64:
+		b = (*[unsafe.Sizeof(t)]byte)(unsafe.Pointer(&t))[:]
+	case int:
+		b = (*[unsafe.Sizeof(t)]byte)(unsafe.Pointer(&t))[:]
+	case bool:
 		b = (*[unsafe.Sizeof(t)]byte)(unsafe.Pointer(&t))[:]
 	case string:
 		b = unsafe.Slice(unsafe.StringData(t), len(t))

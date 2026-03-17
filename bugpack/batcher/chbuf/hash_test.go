@@ -1,8 +1,13 @@
 package chbuf
 
 import (
+	"fmt"
+	"os"
 	"slices"
 	"testing"
+
+	"github.com/go-faster/jx"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/shagohead/bugpack/bugpack/envelope"
 )
@@ -14,7 +19,7 @@ func Test_calcHash(t *testing.T) {
 		e.calcHash()
 		s := sum(e)
 		v := repr(e)
-		{ // Checking algorithm determinism.
+		{ // Hash again and compare with previous sum.
 			e.calcHash()
 			if n := sum(e); n != s {
 				t.Errorf("not matched checksum %v to %v for %+v", n, s, v)
@@ -30,9 +35,9 @@ func Test_calcHash(t *testing.T) {
 
 	t.Run("message", func(t *testing.T) {
 		for _, e := range []envelope.Event{
-			{Level: "", Message: ""},
-			{Level: "abc", Message: ""},
-			{Level: "", Message: "abc"},
+			{Level: "error", Message: ""},
+			{Level: "err", Message: "or"},
+			{Level: "er", Message: "ror"},
 		} {
 			checksum(
 				t, &Envelope{Envelope: &envelope.Envelope{Event: e}},
@@ -66,4 +71,37 @@ func Test_calcHash(t *testing.T) {
 			)
 		}
 	})
+}
+
+func TestHashDetermenism(t *testing.T) {
+	type sum struct {
+		msg uint64
+		exc []uint64
+	}
+
+	for name, sum := range map[string]sum{
+		"envelope_object_exception": {exc: []uint64{12263778202603919805}},
+		"envelope_array_exceptions": {exc: []uint64{3493830303312952130, 16100857950136530739, 942250274704261214}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f, err := os.Open(fmt.Sprintf("../../envelope/testdata/%s.json", name))
+			if err != nil {
+				t.Fatalf("%s: opening error: %v", name, err)
+			}
+			t.Cleanup(func() { f.Close() })
+			e := new(envelope.Envelope)
+			d := new(jx.Decoder)
+			d.Reset(f)
+			if err := e.Decode(d); err != nil {
+				t.Fatalf("%s: decoding error: %v", name, err)
+			}
+			w := Bufferer(nil).Envelope(e)
+			if w.msgHash != sum.msg {
+				t.Errorf("%s: msgHash = %v, want %v", name, w.msgHash, sum.msg)
+			}
+			if d := cmp.Diff(sum.exc, w.excHash); d != "" {
+				t.Errorf("%s: excHash diff:\n%s", name, d)
+			}
+		})
+	}
 }

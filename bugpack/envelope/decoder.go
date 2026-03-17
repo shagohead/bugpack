@@ -10,12 +10,17 @@ import (
 	"github.com/go-faster/jx"
 )
 
+var ErrNonEventType = errors.New("envelope type is not event")
+
 func (e *Envelope) Decode(d *jx.Decoder) (err error) {
 	if err = e.Meta.Decode(d); err != nil {
 		return errors.Wrap(err, "meta object")
 	}
 	if err = e.Header.Decode(d); err != nil {
 		return errors.Wrap(err, "header object")
+	}
+	if e.Header.Type != "event" {
+		return ErrNonEventType
 	}
 	if err = e.Event.Decode(d); err != nil {
 		return errors.Wrap(err, "event object")
@@ -49,7 +54,6 @@ func (h *Header) Decode(d *jx.Decoder) error {
 	return d.ObjBytes(func(d *jx.Decoder, key []byte) (err error) {
 		switch string(key) {
 		case "type":
-			// TODO: Skip other than `event` completly.
 			h.Type, err = d.Str()
 		case "content_type":
 			h.ContentType, err = d.Str()

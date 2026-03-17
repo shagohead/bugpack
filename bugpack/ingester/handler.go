@@ -2,6 +2,7 @@ package ingester
 
 import (
 	"compress/gzip"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -78,6 +79,10 @@ func (h *handler[E]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer jx.PutDecoder(dec)
 	dec.Reset(body)
 	if err := event.Decode(dec); err != nil {
+		if errors.Is(err, envelope.ErrNonEventType) {
+			span.SetAttributes(attribute.String("envelope.type", event.Type))
+			return
+		}
 		span.SetStatus(codes.Error, "decoding error")
 		span.RecordError(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
