@@ -72,13 +72,13 @@ func serve(ctx context.Context, name string, args []string) error {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt)
 		<-sig
-		slog.InfoContext(ctx, "Shutdown")
+		slog.InfoContext(ctx, "shutdown server")
 		if err := server.Shutdown(ctx); err != nil {
 			slog.ErrorContext(ctx, err.Error())
 		}
 	}()
 
-	slog.InfoContext(ctx, "Start listening", slog.String("addr", server.Addr))
+	slog.InfoContext(ctx, "start listening", slog.String("addr", server.Addr))
 	if e := server.ListenAndServe(); e != http.ErrServerClosed {
 		err = errors.Join(err, e)
 	}
