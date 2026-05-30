@@ -2,12 +2,25 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    tags: ["v*"]
+
+  pull_request:
+      branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: ${{ vars.DOCKERHUB_USERNAME }}/bugpack
+        tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
     - name: Login to Docker Hub
       uses: docker/login-action@v4
       with:
@@ -19,5 +32,6 @@ jobs:
       uses: docker/build-push-action@v7
       with:
         platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ vars.DOCKERHUB_USERNAME }}/bugpack:latest
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

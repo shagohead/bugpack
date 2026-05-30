@@ -52,7 +52,7 @@ func TestUnmarshall(t *testing.T) {
 				}
 				for i, want := range want {
 					if i >= len(p.Filters) {
-						t.Errorf("project filter %s[%q] not found", pkey, i)
+						t.Errorf("project filter %s[%d] not found", pkey, i)
 						continue
 					}
 					pf := p.Filters[i]
