@@ -1,11 +1,16 @@
-FROM golang:1.25-alpine AS builder
+# syntax=docker/dockerfile:1
+
+FROM golang:1.26-alpine AS builder
 WORKDIR /go/src/app
 
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod  go mod download
 
 COPY bugpack bugpack/
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/bugpack bugpack/*.go
+RUN \
+	--mount=type=cache,target=/go/pkg/mod \
+	--mount=type=cache,target=/root/.cache/go-build \
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/bugpack bugpack/*.go
 
 FROM alpine
 COPY --from=builder /go/bin/bugpack /usr/local/bin/bugpack
