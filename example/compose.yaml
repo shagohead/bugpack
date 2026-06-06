@@ -1,0 +1,31 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.7-alpine
+    environment:
+      CLICKHOUSE_PASSWORD: default
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "0.0.0.0:8123/ping"]
+      start_interval: 2s
+      start_period: 30s
+      timeout: 2s
+      retries: 5
+  bugpack:
+    image: lastdanmer/bugpack:local
+    command:
+      - server
+      - -f
+      - "/config.yaml"
+    ports:
+      - 8080
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment:
+      CH_ADDRESS: clickhouse:9000
+      CH_DATABASE: default
+      CH_USER: default
+      CH_PASSWORD: default
+    volumes:
+      - type: bind
+        source: ./config.yaml
+        target: /config.yaml

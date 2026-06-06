@@ -46,6 +46,10 @@ func (c *Config) unmarshal(src io.Reader) error {
 		return err
 	}
 	for key, p := range c.Projects {
+		if p == nil {
+			p = new(project)
+			c.Projects[key] = p
+		}
 		if p.Rename == "" {
 			p.Rename = key
 		}
