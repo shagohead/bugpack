@@ -1,6 +1,10 @@
 BugPack
 =======
 
+<p align="center">
+    <img src="logo.png" height="150" style="max-width: 100%; height: auto; max-height: 150px;">
+</p>
+
 Lightweight self-hosted Sentry-compatible bug tracking system with ClickHouse as storage backend.
 
 - Compatible with Sentry API. On the client (project) side use already existen Sentry SDKs.
