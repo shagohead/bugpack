@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -17,7 +18,11 @@ import (
 )
 
 func New[E any](projects ProjectResolver, batcher batcher.Batcher[E]) http.Handler {
-	return &handler[E]{projects: projects, batcher: batcher}
+	return &handler[E]{
+		logger:   slog.Default(),
+		projects: projects,
+		batcher:  batcher,
+	}
 }
 
 type ProjectResolver interface {
@@ -30,6 +35,7 @@ type Project interface {
 }
 
 type handler[E any] struct {
+	logger   *slog.Logger
 	projects ProjectResolver
 	batcher  batcher.Batcher[E]
 }
@@ -97,9 +103,11 @@ func (h *handler[E]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	event.Project = project.Name()
 	event.ClientIP = clientIP(r)
 	if !project.Filter(event) {
+		h.logger.LogAttrs(r.Context(), slog.LevelDebug, "event filtered out")
 		span.AddEvent("filtered out")
 		return
 	}
+	h.logger.LogAttrs(r.Context(), slog.LevelDebug, "batch event")
 	h.batcher.Batch(event)
 }
 

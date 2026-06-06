@@ -3,6 +3,7 @@ package chbuf
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
@@ -91,6 +92,7 @@ const query = `INSERT INTO issue_event (
 // Flush implements batcher.Buffer.
 func (b *buffer) Flush(ctx context.Context) error {
 	if b.val.timestamp.Rows() == 0 {
+		slog.LogAttrs(ctx, slog.LevelInfo, "buffer is empty")
 		return nil
 	}
 	if err := b.con.Do(ctx, ch.Query{Body: query, Input: b.val.input}); err != nil {

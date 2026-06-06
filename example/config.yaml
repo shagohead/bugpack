@@ -1,2 +1,9 @@
+log_format: text
+
+batcher:
+  batch_timeout: 2s
+  retry_backoff:
+    enable: false
+
 projects:
   testapi:

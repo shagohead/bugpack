@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,6 +20,23 @@ import (
 	"github.com/shagohead/bugpack/bugpack/ingester"
 )
 
+func logger(cfg *config.Config) (*slog.Logger, error) {
+	var h slog.Handler
+	o := new(slog.HandlerOptions)
+	o.Level = cfg.LogLevel
+	switch cfg.LogFormat {
+	case config.LogFormatJSON:
+		h = slog.NewJSONHandler(os.Stderr, o)
+	case config.LogFormatText:
+		h = slog.NewTextHandler(os.Stderr, o)
+	default:
+		return nil, fmt.Errorf("unsupported log format %q", cfg.LogFormat)
+	}
+	l := slog.New(h)
+	slog.SetDefault(l)
+	return l, nil
+}
+
 func serve(ctx context.Context, name string, args []string) error {
 	var configPath string
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
@@ -29,10 +47,15 @@ func serve(ctx context.Context, name string, args []string) error {
 	if configPath == "" {
 		return errors.New("missing configuration file option value")
 	}
-	config, err := config.Load(configPath)
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}
+	log, err := logger(cfg)
+	if err != nil {
+		return err
+	}
+
 	// TODO: Config optional otel resource.
 	opts := ch.Options{
 		ClientName:                   "bugpack",
@@ -44,17 +67,17 @@ func serve(ctx context.Context, name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	batcher := batcher.New(chbuf.Bufferer(chpool), config.Batcher)
+	batcher := batcher.New(chbuf.Bufferer(chpool), cfg.Batcher)
 	handler := &handler{
-		healthPath: config.HealthPath,
-		apiHandler: ingester.New[*chbuf.Envelope](config, batcher),
+		healthPath: cfg.HealthPath,
+		apiHandler: ingester.New[*chbuf.Envelope](cfg, batcher),
 	}
 	server := &http.Server{
-		Addr:    config.ServerAddr,
+		Addr:    cfg.ServerAddr,
 		Handler: handler,
 	}
-	if config.ListenPrefix != "" {
-		server.Handler = http.StripPrefix(config.ListenPrefix, server.Handler)
+	if cfg.ListenPrefix != "" {
+		server.Handler = http.StripPrefix(cfg.ListenPrefix, server.Handler)
 	}
 	server.Handler = otelhttp.NewHandler(
 		server.Handler, "Ingest",
@@ -72,13 +95,13 @@ func serve(ctx context.Context, name string, args []string) error {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt)
 		<-sig
-		slog.InfoContext(ctx, "shutdown server")
+		log.InfoContext(ctx, "shutdown server")
 		if err := server.Shutdown(ctx); err != nil {
-			slog.ErrorContext(ctx, err.Error())
+			log.ErrorContext(ctx, err.Error())
 		}
 	}()
 
-	slog.InfoContext(ctx, "start listening", slog.String("addr", server.Addr))
+	log.InfoContext(ctx, "start listening", slog.String("addr", server.Addr))
 	if e := server.ListenAndServe(); e != http.ErrServerClosed {
 		err = errors.Join(err, e)
 	}

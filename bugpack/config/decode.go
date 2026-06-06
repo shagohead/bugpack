@@ -69,6 +69,22 @@ func (c *Config) unmarshal(src io.Reader) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.NodeUnmarshalerContext.
+func (l *LogFormat) UnmarshalYAML(ctx context.Context, s ast.Node) error {
+	if t := s.Type(); t != ast.StringType {
+		return fmt.Errorf("unexpected LogFormat node type: %s", t)
+	}
+	switch v := s.String(); LogFormat(v) {
+	case LogFormatJSON, LogFormatText:
+		*l = LogFormat(v)
+		return nil
+	default:
+		return fmt.Errorf("invalid LogFormat value %q; expected text or json", v)
+	}
+}
+
+var _ yaml.NodeUnmarshalerContext = (*LogFormat)(nil)
+
 type baseFilter struct {
 	Type string `yaml:"type"`
 }

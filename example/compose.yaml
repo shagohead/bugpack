@@ -1,4 +1,5 @@
 services:
+
   clickhouse:
     image: clickhouse/clickhouse-server:25.7-alpine
     environment:
@@ -9,6 +10,20 @@ services:
       start_period: 30s
       timeout: 2s
       retries: 5
+
+  migrate:
+    image: lastdanmer/bugpack:local
+    command:
+      - migrate
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment: &bugpack-env
+      CH_ADDRESS: clickhouse:9000
+      CH_DATABASE: default
+      CH_USER: default
+      CH_PASSWORD: default
+
   bugpack:
     image: lastdanmer/bugpack:local
     command:
@@ -18,13 +33,9 @@ services:
     ports:
       - 8080
     depends_on:
-      clickhouse:
-        condition: service_healthy
-    environment:
-      CH_ADDRESS: clickhouse:9000
-      CH_DATABASE: default
-      CH_USER: default
-      CH_PASSWORD: default
+      migrate:
+        condition: service_completed_successfully
+    environment: *bugpack-env
     volumes:
       - type: bind
         source: ./config.yaml

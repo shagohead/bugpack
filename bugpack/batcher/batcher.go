@@ -3,6 +3,7 @@ package batcher
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -90,6 +91,7 @@ func New[E any](bufferer Bufferer[E], config Config) Batcher[E] {
 	}
 	ctx, cancel := context.WithCancel(config.FlushContext)
 	return &batcher[E]{
+		log:       slog.Default(),
 		conf:      config,
 		bufs:      bufferer,
 		pool:      &sync.Pool{New: func() any { return bufferer.Buffer() }},
@@ -104,6 +106,7 @@ func New[E any](bufferer Bufferer[E], config Config) Batcher[E] {
 
 // batcher accumulates events into buffers, which then will be routed into flushing workers.
 type batcher[E any] struct {
+	log       *slog.Logger
 	conf      Config
 	bufs      Bufferer[E]
 	pool      *sync.Pool
@@ -134,7 +137,9 @@ func (b *batcher[E]) Serve() error {
 		go func() {
 			defer wg.Done()
 			for buf := range b.toflash {
+				b.log.LogAttrs(b.ctxflash, slog.LevelInfo, "flush buffer")
 				if err := b.flush(b.ctxflash, buf); err != nil {
+					b.log.LogAttrs(b.ctxflash, slog.LevelError, err.Error())
 					select {
 					case errs <- err:
 					default:
@@ -183,6 +188,7 @@ func (b *batcher[E]) receive() {
 		case <-b.done:
 			stop = true
 		case e := <-b.events:
+			b.log.LogAttrs(b.ctxflash, slog.LevelDebug, "append event into buffer")
 			if !c.Append(e) {
 				continue
 			}

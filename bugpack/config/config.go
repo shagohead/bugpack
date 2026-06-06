@@ -2,13 +2,23 @@ package config
 
 import (
 	"io"
+	"log/slog"
 
 	"github.com/shagohead/bugpack/bugpack/batcher"
 	"github.com/shagohead/bugpack/bugpack/envelope"
 	"github.com/shagohead/bugpack/bugpack/ingester"
 )
 
+type LogFormat string
+
+const (
+	LogFormatJSON = "json"
+	LogFormatText = "text"
+)
+
 type Config struct {
+	LogFormat    LogFormat           `yaml:"log_format"`
+	LogLevel     slog.Level          `yaml:"log_level"`
 	ServerAddr   string              `yaml:"server_addr"`
 	ListenPrefix string              `yaml:"listen_prefix"`
 	HealthPath   string              `yaml:"health_path"`
@@ -60,6 +70,8 @@ type pfilter struct {
 }
 
 func (c *Config) configure(src io.Reader) error {
+	c.LogFormat = LogFormatJSON
+	c.LogLevel = slog.LevelInfo
 	c.ServerAddr = ":8080"
 	c.HealthPath = "/healtz"
 	c.Batcher = batcher.DefaultConfig
